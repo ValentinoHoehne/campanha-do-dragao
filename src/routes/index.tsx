@@ -12,6 +12,7 @@ import {
   maxHp,
   newSave,
   persist,
+  SAVE_KEY,
   xpToNext,
   type ClassId,
   type Enemy,
@@ -76,6 +77,19 @@ function Game() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-6">
+      <GameMenu
+        hasSave={!!save}
+        onHome={() => setScreen("menu")}
+        onReset={() => {
+          try {
+            localStorage.removeItem(SAVE_KEY);
+          } catch {
+            /* ignore */
+          }
+          setSave(null);
+          setScreen("menu");
+        }}
+      />
       {screen === "menu" && (
         <Menu
           save={save}
@@ -109,6 +123,126 @@ function Game() {
     </main>
   );
 }
+
+function GameMenu({
+  hasSave,
+  onHome,
+  onReset,
+}: {
+  hasSave: boolean;
+  onHome: () => void;
+  onReset: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [full, setFull] = useState(false);
+
+  function close() {
+    setOpen(false);
+    setConfirm(false);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setFull(false);
+      } else {
+        await document.documentElement.requestFullscreen();
+        setFull(true);
+      }
+    } catch {
+      /* não suportado */
+    }
+    close();
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Abrir menu"
+        onClick={() => setOpen(true)}
+        className="btn-block btn-block-press fixed right-3 top-3 z-40 h-11 w-11 !p-0 bg-secondary text-secondary-foreground"
+      >
+        <span className="flex flex-col gap-[3px]">
+          <span className="block h-[3px] w-5 rounded bg-current" />
+          <span className="block h-[3px] w-5 rounded bg-current" />
+          <span className="block h-[3px] w-5 rounded bg-current" />
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-end bg-background/80 p-3 backdrop-blur-sm"
+          onClick={close}
+        >
+          <div
+            className="panel mt-1 w-60 p-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-3 px-1 text-lg text-primary">Menu</h2>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                className="btn-block btn-block-press w-full bg-primary text-primary-foreground"
+                onClick={() => window.location.reload()}
+              >
+                Atualizar página
+              </button>
+              <button
+                type="button"
+                className="btn-block btn-block-press w-full bg-secondary text-secondary-foreground"
+                onClick={() => {
+                  onHome();
+                  close();
+                }}
+              >
+                Menu inicial
+              </button>
+              <button
+                type="button"
+                className="btn-block btn-block-press w-full bg-secondary text-secondary-foreground"
+                onClick={toggleFullscreen}
+              >
+                {full ? "Sair da tela cheia" : "Tela cheia"}
+              </button>
+              {confirm ? (
+                <button
+                  type="button"
+                  className="btn-block btn-block-press w-full bg-destructive text-destructive-foreground"
+                  onClick={() => {
+                    onReset();
+                    close();
+                  }}
+                >
+                  Confirmar exclusão
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!hasSave}
+                  className="btn-block btn-block-press w-full bg-destructive text-destructive-foreground"
+                  onClick={() => setConfirm(true)}
+                >
+                  Apagar progresso
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-block btn-block-press w-full bg-muted text-muted-foreground"
+                onClick={close}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 
 function Title() {
   return (
