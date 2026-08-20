@@ -120,13 +120,18 @@ function Game() {
       {screen === "hub" && save && (
         <Hub
           save={save}
+          setSave={setSave}
           onBattle={() => setScreen("battle")}
           onShop={() => setScreen("shop")}
+          onGear={() => setScreen("gear")}
           onMenu={() => setScreen("menu")}
         />
       )}
       {screen === "shop" && save && (
         <Shop save={save} setSave={setSave} onBack={() => setScreen("hub")} />
+      )}
+      {screen === "gear" && save && (
+        <Gear save={save} setSave={setSave} onBack={() => setScreen("hub")} />
       )}
       {screen === "battle" && save && (
         <Battle save={save} setSave={setSave} onExit={() => setScreen("hub")} />
