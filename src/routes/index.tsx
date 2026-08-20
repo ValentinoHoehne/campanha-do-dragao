@@ -811,6 +811,7 @@ function Battle({
       }
       const nextStage =
         enemy.boss || stage.id < save.stage ? save.stage : Math.min(save.stage + 1, STAGES.length);
+      const drop = rollDrop(stage.id, diff, !!enemy.boss);
       setSave({
         ...save,
         xp,
@@ -819,11 +820,12 @@ function Battle({
         potions,
         stage: enemy.boss ? save.stage : nextStage,
         cleared: save.cleared || !!enemy.boss,
+        inventory: drop ? [...save.inventory, drop] : save.inventory,
       });
-      setResult({ win: true, xp: enemy.xp, gold, up });
+      setResult({ win: true, xp: enemy.xp, gold, up, drop });
     } else {
       setSave({ ...save, gold: Math.max(0, save.gold - 10), potions });
-      setResult({ win: false, xp: 0, gold: 0, up: false });
+      setResult({ win: false, xp: 0, gold: 0, up: false, drop: null });
     }
   }
 
