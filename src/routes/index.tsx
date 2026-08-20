@@ -4,6 +4,8 @@ import {
   CLASSES,
   STAGES,
   damage,
+  getStage,
+  pickEnemy,
   heroAtk,
   heroDef,
   loadSave,
@@ -273,7 +275,7 @@ function Hub({
   onShop: () => void;
   onMenu: () => void;
 }) {
-  const stage = STAGES.find((s) => s.id === save.stage) ?? STAGES[STAGES.length - 1];
+  const stage = getStage(save.stage);
   return (
     <div>
       <StatusBar save={save} />
@@ -432,11 +434,8 @@ function Battle({
   onExit: () => void;
 }) {
   const cls = CLASSES.find((c) => c.id === save.classId)!;
-  const stage = STAGES.find((s) => s.id === save.stage) ?? STAGES[STAGES.length - 1];
-  const enemy = useMemo<Enemy>(
-    () => stage.enemies[Math.floor(Math.random() * stage.enemies.length)],
-    [stage],
-  );
+  const stage = getStage(save.stage);
+  const enemy = useMemo<Enemy>(() => pickEnemy(stage), [stage]);
 
   const hpMax = maxHp(save);
   const [hp, setHp] = useState(hpMax);

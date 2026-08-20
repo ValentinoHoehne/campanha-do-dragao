@@ -206,3 +206,11 @@ export function damage(atk: number, def: number, variance = 0.15) {
   const v = 1 + (Math.random() * 2 - 1) * variance;
   return Math.max(1, Math.round(raw * v));
 }
+
+export function getStage(id: number): Stage {
+  return STAGES.find((s) => s.id === id) ?? STAGES[STAGES.length - 1]!;
+}
+
+export function pickEnemy(stage: Stage): Enemy {
+  return stage.enemies[Math.floor(Math.random() * stage.enemies.length)]!;
+}
