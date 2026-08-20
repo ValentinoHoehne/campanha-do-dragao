@@ -774,21 +774,22 @@ function Battle({
 }) {
   const cls = CLASSES.find((c) => c.id === save.classId)!;
   const stage = getStage(save.stage);
-  const enemy = useMemo<Enemy>(() => pickEnemy(stage), [stage]);
+  const diff = getDifficulty(save.difficulty);
+  const enemy = useMemo<Enemy>(() => scaleEnemy(pickEnemy(stage), diff), [stage, diff]);
 
   const hpMax = maxHp(save);
   const [hp, setHp] = useState(hpMax);
   const [ehp, setEhp] = useState(enemy.hp);
   const [energy, setEnergy] = useState(2);
   const [potions, setPotions] = useState(save.potions);
-  const [log, setLog] = useState<string[]>([`Um ${enemy.name} selvagem apareceu!`]);
+  const [log, setLog] = useState<string[]>([`Um ${enemy.name} selvagem apareceu! (${diff.name})`]);
   const [busy, setBusy] = useState(false);
   const [hitEnemy, setHitEnemy] = useState(false);
   const [hitHero, setHitHero] = useState(false);
   const [pop, setPop] = useState<{ t: string; k: number } | null>(null);
-  const [result, setResult] = useState<null | { win: boolean; xp: number; gold: number; up: boolean }>(
-    null,
-  );
+  const [result, setResult] = useState<
+    null | { win: boolean; xp: number; gold: number; up: boolean; drop: Item | null }
+  >(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
