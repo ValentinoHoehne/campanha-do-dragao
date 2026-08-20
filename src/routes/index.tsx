@@ -12,6 +12,7 @@ import {
   maxHp,
   newSave,
   persist,
+  SAVE_KEY,
   xpToNext,
   type ClassId,
   type Enemy,
@@ -81,7 +82,7 @@ function Game() {
         onHome={() => setScreen("menu")}
         onReset={() => {
           try {
-            localStorage.removeItem("campanha-dragao-save");
+            localStorage.removeItem(SAVE_KEY);
           } catch {
             /* ignore */
           }
