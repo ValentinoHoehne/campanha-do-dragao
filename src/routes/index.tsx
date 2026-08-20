@@ -850,7 +850,13 @@ function Battle({
 
     if (kind === "attack") {
       dealt = damage(heroAtk(save), enemy.def);
-      push(`${save.name} ataca causando ${dealt} de dano.`);
+      const crit = Math.random() * 100 < heroCrit(save);
+      if (crit) dealt = Math.round(dealt * 1.8);
+      push(
+        crit
+          ? `💥 CRÍTICO! ${save.name} causa ${dealt} de dano.`
+          : `${save.name} ataca causando ${dealt} de dano.`,
+      );
       setEnergy((e) => Math.min(6, e + 1));
     } else if (kind === "skill") {
       const mult = save.classId === "mago" ? 2.4 : save.classId === "ladino" ? 2.2 : 2;
