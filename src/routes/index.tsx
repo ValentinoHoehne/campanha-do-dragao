@@ -3,11 +3,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CLASSES,
   STAGES,
+  DIFFICULTIES,
   damage,
   getStage,
+  getDifficulty,
+  scaleEnemy,
   pickEnemy,
+  rollDrop,
+  rarityDef,
+  itemPower,
+  sellPrice,
   heroAtk,
   heroDef,
+  heroCrit,
   loadSave,
   maxHp,
   newSave,
@@ -15,8 +23,11 @@ import {
   SAVE_KEY,
   xpToNext,
   type ClassId,
+  type Difficulty,
   type Enemy,
+  type Item,
   type Save,
+  type Slot,
 } from "@/lib/game";
 
 export const Route = createFileRoute("/")({
@@ -26,19 +37,19 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Crie seu herói, enfrente monstros em batalhas por turnos, evolua de nível e derrote o Dragão Sombrio em 6 estágios.",
+          "Crie seu herói, escolha a dificuldade, colete drops, monte sua build e derrote o Dragão Sombrio em 6 estágios.",
       },
       { property: "og:title", content: "Campanha do Dragão — RPG de Turnos" },
       {
         property: "og:description",
-        content: "RPG de combate por turnos com classes, loja, upgrades e chefão final.",
+        content: "RPG por turnos com classes, dificuldades, drops de itens, builds e chefão final.",
       },
     ],
   }),
   component: Game,
 });
 
-type Screen = "menu" | "create" | "hub" | "battle" | "shop";
+type Screen = "menu" | "create" | "hub" | "battle" | "shop" | "gear";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
