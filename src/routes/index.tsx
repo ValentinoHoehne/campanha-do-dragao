@@ -919,6 +919,17 @@ function Battle({
               Você perdeu 10 🪙. Compre upgrades e tente de novo!
             </p>
           )}
+          {result.drop && (
+            <div className="mt-4 text-left">
+              <p className="mb-1 text-center text-xs font-black uppercase tracking-widest text-gold">
+                🎁 Item dropado!
+              </p>
+              <ItemCard item={result.drop} />
+              <p className="mt-1 text-center text-[10px] text-muted-foreground">
+                Vá em 🎒 BUILD para equipar.
+              </p>
+            </div>
+          )}
           <button
             onClick={onExit}
             className="btn-block btn-block-press mt-5 w-full bg-primary text-primary-foreground"
