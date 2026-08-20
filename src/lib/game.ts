@@ -135,6 +135,178 @@ export const STAGES: Stage[] = [
   },
 ];
 
+/* ---------------- Dificuldade ---------------- */
+
+export type Difficulty = "facil" | "medio" | "dificil";
+
+export interface DifficultyDef {
+  id: Difficulty;
+  name: string;
+  emoji: string;
+  desc: string;
+  enemyMult: number; // vida/ataque/defesa do inimigo
+  rewardMult: number; // xp e ouro
+  dropChance: number; // chance de drop por vitória
+  rarityBonus: number; // empurra a raridade pra cima
+}
+
+export const DIFFICULTIES: DifficultyDef[] = [
+  {
+    id: "facil",
+    name: "Fácil",
+    emoji: "🟢",
+    desc: "Inimigos fracos. Bom pra treinar.",
+    enemyMult: 0.75,
+    rewardMult: 0.8,
+    dropChance: 0.35,
+    rarityBonus: 0,
+  },
+  {
+    id: "medio",
+    name: "Médio",
+    emoji: "🟡",
+    desc: "Equilibrado. Drops decentes.",
+    enemyMult: 1,
+    rewardMult: 1,
+    dropChance: 0.5,
+    rarityBonus: 0.12,
+  },
+  {
+    id: "dificil",
+    name: "Difícil",
+    emoji: "🔴",
+    desc: "Inimigos brutais, mas os melhores itens.",
+    enemyMult: 1.45,
+    rewardMult: 1.7,
+    dropChance: 0.72,
+    rarityBonus: 0.3,
+  },
+];
+
+export function getDifficulty(id: Difficulty): DifficultyDef {
+  return DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1]!;
+}
+
+export function scaleEnemy(enemy: Enemy, diff: DifficultyDef): Enemy {
+  return {
+    ...enemy,
+    hp: Math.round(enemy.hp * diff.enemyMult),
+    atk: Math.round(enemy.atk * diff.enemyMult),
+    def: Math.round(enemy.def * diff.enemyMult),
+    xp: Math.round(enemy.xp * diff.rewardMult),
+    gold: Math.round(enemy.gold * diff.rewardMult),
+  };
+}
+
+/* ---------------- Itens / Drops ---------------- */
+
+export type Slot = "arma" | "armadura" | "acessorio";
+export type Rarity = "comum" | "raro" | "epico" | "lendario";
+
+export interface Item {
+  uid: string;
+  name: string;
+  emoji: string;
+  slot: Slot;
+  rarity: Rarity;
+  atk: number;
+  def: number;
+  hp: number;
+  crit: number; // % de chance de crítico
+}
+
+export const RARITIES: { id: Rarity; name: string; color: string; mult: number; weight: number }[] = [
+  { id: "comum", name: "Comum", color: "text-muted-foreground", mult: 1, weight: 0.58 },
+  { id: "raro", name: "Raro", color: "text-mana", mult: 1.6, weight: 0.27 },
+  { id: "epico", name: "Épico", color: "text-xp", mult: 2.4, weight: 0.12 },
+  { id: "lendario", name: "Lendário", color: "text-gold", mult: 3.6, weight: 0.03 },
+];
+
+export function rarityDef(r: Rarity) {
+  return RARITIES.find((x) => x.id === r) ?? RARITIES[0]!;
+}
+
+const SLOT_BASES: Record<Slot, { names: string[]; emojis: string[]; atk: number; def: number; hp: number; crit: number }> = {
+  arma: {
+    names: ["Lâmina", "Machado", "Cajado", "Adaga", "Martelo"],
+    emojis: ["⚔️", "🪓", "🔱", "🗡️", "🔨"],
+    atk: 5,
+    def: 0,
+    hp: 0,
+    crit: 3,
+  },
+  armadura: {
+    names: ["Peitoral", "Manto", "Cota", "Couraça"],
+    emojis: ["🛡️", "🧥", "🥋", "🦺"],
+    atk: 0,
+    def: 4,
+    hp: 14,
+    crit: 0,
+  },
+  acessorio: {
+    names: ["Anel", "Amuleto", "Talismã", "Elmo"],
+    emojis: ["💍", "📿", "🔮", "⛑️"],
+    atk: 2,
+    def: 1,
+    hp: 8,
+    crit: 4,
+  },
+};
+
+const SUFFIXES: Record<Rarity, string[]> = {
+  comum: ["de Ferro", "Gasto", "do Novato"],
+  raro: ["de Aço", "do Vento", "Rúnico"],
+  epico: ["das Sombras", "do Vulcão", "Congelante"],
+  lendario: ["do Dragão", "Eterno", "do Caos"],
+};
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]!;
+}
+
+function rollRarity(bonus: number): Rarity {
+  const r = Math.random() - bonus;
+  if (r < 0.03) return "lendario";
+  if (r < 0.15) return "epico";
+  if (r < 0.42) return "raro";
+  return "comum";
+}
+
+export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): Item | null {
+  const chance = boss ? 1 : diff.dropChance;
+  if (Math.random() > chance) return null;
+  const slot = pick<Slot>(["arma", "armadura", "acessorio"]);
+  const base = SLOT_BASES[slot];
+  const rarity = boss
+    ? rollRarity(diff.rarityBonus + 0.25)
+    : rollRarity(diff.rarityBonus);
+  const rd = rarityDef(rarity);
+  const tier = 1 + (stageId - 1) * 0.55;
+  const scale = tier * rd.mult;
+  const jitter = () => 0.85 + Math.random() * 0.3;
+  return {
+    uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: `${pick(base.names)} ${pick(SUFFIXES[rarity])}`,
+    emoji: pick(base.emojis),
+    slot,
+    rarity,
+    atk: Math.round(base.atk * scale * jitter()),
+    def: Math.round(base.def * scale * jitter()),
+    hp: Math.round(base.hp * scale * jitter()),
+    crit: Math.round(base.crit * rd.mult * jitter()),
+  };
+}
+
+export function itemPower(i: Item) {
+  return i.atk * 3 + i.def * 3 + i.hp + i.crit * 2;
+}
+
+export function sellPrice(i: Item) {
+  return Math.max(5, Math.round(itemPower(i) * 0.6));
+}
+
+/* ---------------- Save ---------------- */
+
 export interface Save {
   classId: ClassId;
   name: string;
@@ -147,6 +319,9 @@ export interface Save {
   bonusDef: number;
   bonusHp: number;
   cleared: boolean;
+  difficulty: Difficulty;
+  inventory: Item[];
+  equipped: Partial<Record<Slot, Item>>;
 }
 
 export const SAVE_KEY = "rpg-campanha-save-v1";
@@ -155,19 +330,32 @@ export function xpToNext(level: number) {
   return Math.round(50 * Math.pow(1.45, level - 1));
 }
 
+export function equippedList(save: Save): Item[] {
+  return Object.values(save.equipped ?? {}).filter(Boolean) as Item[];
+}
+
+function gearSum(save: Save, key: "atk" | "def" | "hp" | "crit") {
+  return equippedList(save).reduce((t, i) => t + (i[key] || 0), 0);
+}
+
 export function maxHp(save: Save) {
   const base = CLASSES.find((c) => c.id === save.classId)!;
-  return base.hp + (save.level - 1) * 14 + save.bonusHp;
+  return base.hp + (save.level - 1) * 14 + save.bonusHp + gearSum(save, "hp");
 }
 
 export function heroAtk(save: Save) {
   const base = CLASSES.find((c) => c.id === save.classId)!;
-  return base.atk + (save.level - 1) * 3 + save.bonusAtk;
+  return base.atk + (save.level - 1) * 3 + save.bonusAtk + gearSum(save, "atk");
 }
 
 export function heroDef(save: Save) {
   const base = CLASSES.find((c) => c.id === save.classId)!;
-  return base.def + (save.level - 1) * 1.5 + save.bonusDef;
+  return base.def + (save.level - 1) * 1.5 + save.bonusDef + gearSum(save, "def");
+}
+
+export function heroCrit(save: Save) {
+  const base = save.classId === "ladino" ? 15 : 5;
+  return Math.min(75, base + gearSum(save, "crit"));
 }
 
 export function newSave(classId: ClassId, name: string): Save {
@@ -183,6 +371,18 @@ export function newSave(classId: ClassId, name: string): Save {
     bonusDef: 0,
     bonusHp: 0,
     cleared: false,
+    difficulty: "medio",
+    inventory: [],
+    equipped: {},
+  };
+}
+
+export function migrate(s: Save): Save {
+  return {
+    ...s,
+    difficulty: s.difficulty ?? "medio",
+    inventory: Array.isArray(s.inventory) ? s.inventory : [],
+    equipped: s.equipped ?? {},
   };
 }
 
@@ -190,7 +390,7 @@ export function loadSave(): Save | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(SAVE_KEY);
-    return raw ? (JSON.parse(raw) as Save) : null;
+    return raw ? migrate(JSON.parse(raw) as Save) : null;
   } catch {
     return null;
   }
