@@ -3,11 +3,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CLASSES,
   STAGES,
+  DIFFICULTIES,
   damage,
   getStage,
+  getDifficulty,
+  scaleEnemy,
   pickEnemy,
+  rollDrop,
+  rarityDef,
+  itemPower,
+  sellPrice,
   heroAtk,
   heroDef,
+  heroCrit,
   loadSave,
   maxHp,
   newSave,
@@ -15,8 +23,11 @@ import {
   SAVE_KEY,
   xpToNext,
   type ClassId,
+  type Difficulty,
   type Enemy,
+  type Item,
   type Save,
+  type Slot,
 } from "@/lib/game";
 
 export const Route = createFileRoute("/")({
@@ -26,19 +37,19 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Crie seu herói, enfrente monstros em batalhas por turnos, evolua de nível e derrote o Dragão Sombrio em 6 estágios.",
+          "Crie seu herói, escolha a dificuldade, colete drops, monte sua build e derrote o Dragão Sombrio em 6 estágios.",
       },
       { property: "og:title", content: "Campanha do Dragão — RPG de Turnos" },
       {
         property: "og:description",
-        content: "RPG de combate por turnos com classes, loja, upgrades e chefão final.",
+        content: "RPG por turnos com classes, dificuldades, drops de itens, builds e chefão final.",
       },
     ],
   }),
   component: Game,
 });
 
-type Screen = "menu" | "create" | "hub" | "battle" | "shop";
+type Screen = "menu" | "create" | "hub" | "battle" | "shop" | "gear";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
@@ -109,13 +120,18 @@ function Game() {
       {screen === "hub" && save && (
         <Hub
           save={save}
+          setSave={setSave}
           onBattle={() => setScreen("battle")}
           onShop={() => setScreen("shop")}
+          onGear={() => setScreen("gear")}
           onMenu={() => setScreen("menu")}
         />
       )}
       {screen === "shop" && save && (
         <Shop save={save} setSave={setSave} onBack={() => setScreen("hub")} />
+      )}
+      {screen === "gear" && save && (
+        <Gear save={save} setSave={setSave} onBack={() => setScreen("hub")} />
       )}
       {screen === "battle" && save && (
         <Battle save={save} setSave={setSave} onExit={() => setScreen("hub")} />
@@ -391,7 +407,7 @@ function StatusBar({ save }: { save: Save }) {
         <Bar value={save.xp} max={xpToNext(save.level)} color="xp" />
         <p className="mt-1 text-[10px] font-bold text-muted-foreground">
           XP {save.xp}/{xpToNext(save.level)} • ❤️ {maxHp(save)} • ⚔️ {heroAtk(save)} • 🛡️{" "}
-          {Math.round(heroDef(save))} • 🧪 {save.potions}
+          {Math.round(heroDef(save))} • 🎯 {heroCrit(save)}% • 🧪 {save.potions}
         </p>
       </div>
     </div>
@@ -400,16 +416,21 @@ function StatusBar({ save }: { save: Save }) {
 
 function Hub({
   save,
+  setSave,
   onBattle,
   onShop,
+  onGear,
   onMenu,
 }: {
   save: Save;
+  setSave: (s: Save) => void;
   onBattle: () => void;
   onShop: () => void;
+  onGear: () => void;
   onMenu: () => void;
 }) {
   const stage = getStage(save.stage);
+  const diff = getDifficulty(save.difficulty);
   return (
     <div>
       <StatusBar save={save} />
@@ -422,6 +443,29 @@ function Hub({
           </p>
         </div>
       )}
+
+      <div className="panel mb-4 p-3">
+        <h3 className="mb-2 text-base text-foreground">Dificuldade</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {DIFFICULTIES.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => setSave({ ...save, difficulty: d.id })}
+              className={`btn-block btn-block-press px-1 py-2 text-[11px] ${
+                save.difficulty === d.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {d.emoji} {d.name.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {diff.desc} • Recompensas x{diff.rewardMult} • Chance de drop{" "}
+          {Math.round(diff.dropChance * 100)}%
+        </p>
+      </div>
 
       <div className="panel mb-4 p-4">
         <p className="text-[11px] font-black uppercase tracking-widest text-accent">
@@ -442,16 +486,22 @@ function Hub({
         </button>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <button
           onClick={onShop}
-          className="btn-block btn-block-press bg-accent text-accent-foreground"
+          className="btn-block btn-block-press bg-accent px-1 text-xs text-accent-foreground"
         >
           🏪 LOJA
         </button>
         <button
+          onClick={onGear}
+          className="btn-block btn-block-press bg-xp px-1 text-xs text-primary-foreground"
+        >
+          🎒 BUILD ({save.inventory.length})
+        </button>
+        <button
           onClick={onMenu}
-          className="btn-block btn-block-press bg-secondary text-secondary-foreground"
+          className="btn-block btn-block-press bg-secondary px-1 text-xs text-secondary-foreground"
         >
           🏰 MENU
         </button>
@@ -558,6 +608,161 @@ function Shop({
   );
 }
 
+const SLOT_LABEL: Record<Slot, string> = {
+  arma: "Arma",
+  armadura: "Armadura",
+  acessorio: "Acessório",
+};
+
+function ItemStats({ item }: { item: Item }) {
+  return (
+    <p className="text-[10px] font-black text-muted-foreground">
+      {item.atk > 0 && <span className="text-primary">⚔️ +{item.atk} </span>}
+      {item.def > 0 && <span className="text-accent">🛡️ +{item.def} </span>}
+      {item.hp > 0 && <span className="text-hp">❤️ +{item.hp} </span>}
+      {item.crit > 0 && <span className="text-xp">🎯 +{item.crit}%</span>}
+    </p>
+  );
+}
+
+function ItemCard({
+  item,
+  equipped,
+  action,
+}: {
+  item: Item;
+  equipped?: boolean;
+  action?: React.ReactNode;
+}) {
+  const rd = rarityDef(item.rarity);
+  return (
+    <div className="panel flex items-center gap-2 p-2">
+      <span className="text-2xl">{item.emoji}</span>
+      <div className="min-w-0 flex-1">
+        <h4 className="truncate text-sm text-foreground">{item.name}</h4>
+        <p className={`text-[10px] font-black uppercase ${rd.color}`}>
+          {rd.name} • {SLOT_LABEL[item.slot]} {equipped ? "• EQUIPADO" : ""}
+        </p>
+        <ItemStats item={item} />
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function Gear({
+  save,
+  setSave,
+  onBack,
+}: {
+  save: Save;
+  setSave: (s: Save) => void;
+  onBack: () => void;
+}) {
+  const slots: Slot[] = ["arma", "armadura", "acessorio"];
+
+  function equip(item: Item) {
+    const current = save.equipped[item.slot];
+    const inv = save.inventory.filter((i) => i.uid !== item.uid);
+    if (current) inv.push(current);
+    setSave({ ...save, inventory: inv, equipped: { ...save.equipped, [item.slot]: item } });
+  }
+
+  function unequip(slot: Slot) {
+    const current = save.equipped[slot];
+    if (!current) return;
+    const eq = { ...save.equipped };
+    delete eq[slot];
+    setSave({ ...save, equipped: eq, inventory: [...save.inventory, current] });
+  }
+
+  function sell(item: Item) {
+    setSave({
+      ...save,
+      gold: save.gold + sellPrice(item),
+      inventory: save.inventory.filter((i) => i.uid !== item.uid),
+    });
+  }
+
+  const sorted = [...save.inventory].sort((a, b) => itemPower(b) - itemPower(a));
+
+  return (
+    <div>
+      <StatusBar save={save} />
+      <h2 className="mb-3 text-2xl text-foreground">🎒 Sua Build</h2>
+
+      <div className="mb-4 space-y-2">
+        {slots.map((s) => {
+          const item = save.equipped[s];
+          return item ? (
+            <ItemCard
+              key={s}
+              item={item}
+              equipped
+              action={
+                <button
+                  onClick={() => unequip(s)}
+                  className="btn-block btn-block-press bg-muted px-2 py-2 text-[10px] text-muted-foreground"
+                >
+                  TIRAR
+                </button>
+              }
+            />
+          ) : (
+            <div
+              key={s}
+              className="panel flex items-center gap-2 border-dashed p-2 text-xs text-muted-foreground"
+            >
+              <span className="text-2xl opacity-40">➕</span> {SLOT_LABEL[s]} vazio
+            </div>
+          );
+        })}
+      </div>
+
+      <h3 className="mb-2 text-base text-foreground">
+        Mochila <span className="text-xs text-muted-foreground">({save.inventory.length})</span>
+      </h3>
+      <div className="space-y-2">
+        {sorted.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Nenhum item ainda. Derrote inimigos para conseguir drops!
+          </p>
+        )}
+        {sorted.map((item) => (
+          <ItemCard
+            key={item.uid}
+            item={item}
+            action={
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => equip(item)}
+                  className="btn-block btn-block-press bg-primary px-2 py-1 text-[10px] text-primary-foreground"
+                >
+                  EQUIPAR
+                </button>
+                <button
+                  onClick={() => sell(item)}
+                  className="btn-block btn-block-press bg-gold px-2 py-1 text-[10px] text-primary-foreground"
+                >
+                  {sellPrice(item)}🪙
+                </button>
+              </div>
+            }
+          />
+        ))}
+      </div>
+
+      <button
+        onClick={onBack}
+        className="btn-block btn-block-press mt-5 w-full bg-secondary text-secondary-foreground"
+      >
+        VOLTAR
+      </button>
+    </div>
+  );
+}
+
+
 function Battle({
   save,
   setSave,
@@ -569,21 +774,22 @@ function Battle({
 }) {
   const cls = CLASSES.find((c) => c.id === save.classId)!;
   const stage = getStage(save.stage);
-  const enemy = useMemo<Enemy>(() => pickEnemy(stage), [stage]);
+  const diff = getDifficulty(save.difficulty);
+  const enemy = useMemo<Enemy>(() => scaleEnemy(pickEnemy(stage), diff), [stage, diff]);
 
   const hpMax = maxHp(save);
   const [hp, setHp] = useState(hpMax);
   const [ehp, setEhp] = useState(enemy.hp);
   const [energy, setEnergy] = useState(2);
   const [potions, setPotions] = useState(save.potions);
-  const [log, setLog] = useState<string[]>([`Um ${enemy.name} selvagem apareceu!`]);
+  const [log, setLog] = useState<string[]>([`Um ${enemy.name} selvagem apareceu! (${diff.name})`]);
   const [busy, setBusy] = useState(false);
   const [hitEnemy, setHitEnemy] = useState(false);
   const [hitHero, setHitHero] = useState(false);
   const [pop, setPop] = useState<{ t: string; k: number } | null>(null);
-  const [result, setResult] = useState<null | { win: boolean; xp: number; gold: number; up: boolean }>(
-    null,
-  );
+  const [result, setResult] = useState<
+    null | { win: boolean; xp: number; gold: number; up: boolean; drop: Item | null }
+  >(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -605,6 +811,7 @@ function Battle({
       }
       const nextStage =
         enemy.boss || stage.id < save.stage ? save.stage : Math.min(save.stage + 1, STAGES.length);
+      const drop = rollDrop(stage.id, diff, !!enemy.boss);
       setSave({
         ...save,
         xp,
@@ -613,11 +820,12 @@ function Battle({
         potions,
         stage: enemy.boss ? save.stage : nextStage,
         cleared: save.cleared || !!enemy.boss,
+        inventory: drop ? [...save.inventory, drop] : save.inventory,
       });
-      setResult({ win: true, xp: enemy.xp, gold, up });
+      setResult({ win: true, xp: enemy.xp, gold, up, drop });
     } else {
       setSave({ ...save, gold: Math.max(0, save.gold - 10), potions });
-      setResult({ win: false, xp: 0, gold: 0, up: false });
+      setResult({ win: false, xp: 0, gold: 0, up: false, drop: null });
     }
   }
 
@@ -642,7 +850,13 @@ function Battle({
 
     if (kind === "attack") {
       dealt = damage(heroAtk(save), enemy.def);
-      push(`${save.name} ataca causando ${dealt} de dano.`);
+      const crit = Math.random() * 100 < heroCrit(save);
+      if (crit) dealt = Math.round(dealt * 1.8);
+      push(
+        crit
+          ? `💥 CRÍTICO! ${save.name} causa ${dealt} de dano.`
+          : `${save.name} ataca causando ${dealt} de dano.`,
+      );
       setEnergy((e) => Math.min(6, e + 1));
     } else if (kind === "skill") {
       const mult = save.classId === "mago" ? 2.4 : save.classId === "ladino" ? 2.2 : 2;
@@ -704,6 +918,17 @@ function Battle({
             <p className="mt-2 text-sm font-bold text-muted-foreground">
               Você perdeu 10 🪙. Compre upgrades e tente de novo!
             </p>
+          )}
+          {result.drop && (
+            <div className="mt-4 text-left">
+              <p className="mb-1 text-center text-xs font-black uppercase tracking-widest text-gold">
+                🎁 Item dropado!
+              </p>
+              <ItemCard item={result.drop} />
+              <p className="mt-1 text-center text-[10px] text-muted-foreground">
+                Vá em 🎒 BUILD para equipar.
+              </p>
+            </div>
           )}
           <button
             onClick={onExit}
