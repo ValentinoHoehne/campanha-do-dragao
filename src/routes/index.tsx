@@ -608,6 +608,161 @@ function Shop({
   );
 }
 
+const SLOT_LABEL: Record<Slot, string> = {
+  arma: "Arma",
+  armadura: "Armadura",
+  acessorio: "Acessório",
+};
+
+function ItemStats({ item }: { item: Item }) {
+  return (
+    <p className="text-[10px] font-black text-muted-foreground">
+      {item.atk > 0 && <span className="text-primary">⚔️ +{item.atk} </span>}
+      {item.def > 0 && <span className="text-accent">🛡️ +{item.def} </span>}
+      {item.hp > 0 && <span className="text-hp">❤️ +{item.hp} </span>}
+      {item.crit > 0 && <span className="text-xp">🎯 +{item.crit}%</span>}
+    </p>
+  );
+}
+
+function ItemCard({
+  item,
+  equipped,
+  action,
+}: {
+  item: Item;
+  equipped?: boolean;
+  action?: React.ReactNode;
+}) {
+  const rd = rarityDef(item.rarity);
+  return (
+    <div className="panel flex items-center gap-2 p-2">
+      <span className="text-2xl">{item.emoji}</span>
+      <div className="min-w-0 flex-1">
+        <h4 className="truncate text-sm text-foreground">{item.name}</h4>
+        <p className={`text-[10px] font-black uppercase ${rd.color}`}>
+          {rd.name} • {SLOT_LABEL[item.slot]} {equipped ? "• EQUIPADO" : ""}
+        </p>
+        <ItemStats item={item} />
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function Gear({
+  save,
+  setSave,
+  onBack,
+}: {
+  save: Save;
+  setSave: (s: Save) => void;
+  onBack: () => void;
+}) {
+  const slots: Slot[] = ["arma", "armadura", "acessorio"];
+
+  function equip(item: Item) {
+    const current = save.equipped[item.slot];
+    const inv = save.inventory.filter((i) => i.uid !== item.uid);
+    if (current) inv.push(current);
+    setSave({ ...save, inventory: inv, equipped: { ...save.equipped, [item.slot]: item } });
+  }
+
+  function unequip(slot: Slot) {
+    const current = save.equipped[slot];
+    if (!current) return;
+    const eq = { ...save.equipped };
+    delete eq[slot];
+    setSave({ ...save, equipped: eq, inventory: [...save.inventory, current] });
+  }
+
+  function sell(item: Item) {
+    setSave({
+      ...save,
+      gold: save.gold + sellPrice(item),
+      inventory: save.inventory.filter((i) => i.uid !== item.uid),
+    });
+  }
+
+  const sorted = [...save.inventory].sort((a, b) => itemPower(b) - itemPower(a));
+
+  return (
+    <div>
+      <StatusBar save={save} />
+      <h2 className="mb-3 text-2xl text-foreground">🎒 Sua Build</h2>
+
+      <div className="mb-4 space-y-2">
+        {slots.map((s) => {
+          const item = save.equipped[s];
+          return item ? (
+            <ItemCard
+              key={s}
+              item={item}
+              equipped
+              action={
+                <button
+                  onClick={() => unequip(s)}
+                  className="btn-block btn-block-press bg-muted px-2 py-2 text-[10px] text-muted-foreground"
+                >
+                  TIRAR
+                </button>
+              }
+            />
+          ) : (
+            <div
+              key={s}
+              className="panel flex items-center gap-2 border-dashed p-2 text-xs text-muted-foreground"
+            >
+              <span className="text-2xl opacity-40">➕</span> {SLOT_LABEL[s]} vazio
+            </div>
+          );
+        })}
+      </div>
+
+      <h3 className="mb-2 text-base text-foreground">
+        Mochila <span className="text-xs text-muted-foreground">({save.inventory.length})</span>
+      </h3>
+      <div className="space-y-2">
+        {sorted.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Nenhum item ainda. Derrote inimigos para conseguir drops!
+          </p>
+        )}
+        {sorted.map((item) => (
+          <ItemCard
+            key={item.uid}
+            item={item}
+            action={
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => equip(item)}
+                  className="btn-block btn-block-press bg-primary px-2 py-1 text-[10px] text-primary-foreground"
+                >
+                  EQUIPAR
+                </button>
+                <button
+                  onClick={() => sell(item)}
+                  className="btn-block btn-block-press bg-gold px-2 py-1 text-[10px] text-primary-foreground"
+                >
+                  {sellPrice(item)}🪙
+                </button>
+              </div>
+            }
+          />
+        ))}
+      </div>
+
+      <button
+        onClick={onBack}
+        className="btn-block btn-block-press mt-5 w-full bg-secondary text-secondary-foreground"
+      >
+        VOLTAR
+      </button>
+    </div>
+  );
+}
+
+
 function Battle({
   save,
   setSave,
