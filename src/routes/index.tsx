@@ -407,7 +407,7 @@ function StatusBar({ save }: { save: Save }) {
         <Bar value={save.xp} max={xpToNext(save.level)} color="xp" />
         <p className="mt-1 text-[10px] font-bold text-muted-foreground">
           XP {save.xp}/{xpToNext(save.level)} • ❤️ {maxHp(save)} • ⚔️ {heroAtk(save)} • 🛡️{" "}
-          {Math.round(heroDef(save))} • 🧪 {save.potions}
+          {Math.round(heroDef(save))} • 🎯 {heroCrit(save)}% • 🧪 {save.potions}
         </p>
       </div>
     </div>
@@ -416,16 +416,21 @@ function StatusBar({ save }: { save: Save }) {
 
 function Hub({
   save,
+  setSave,
   onBattle,
   onShop,
+  onGear,
   onMenu,
 }: {
   save: Save;
+  setSave: (s: Save) => void;
   onBattle: () => void;
   onShop: () => void;
+  onGear: () => void;
   onMenu: () => void;
 }) {
   const stage = getStage(save.stage);
+  const diff = getDifficulty(save.difficulty);
   return (
     <div>
       <StatusBar save={save} />
@@ -438,6 +443,29 @@ function Hub({
           </p>
         </div>
       )}
+
+      <div className="panel mb-4 p-3">
+        <h3 className="mb-2 text-base text-foreground">Dificuldade</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {DIFFICULTIES.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => setSave({ ...save, difficulty: d.id })}
+              className={`btn-block btn-block-press px-1 py-2 text-[11px] ${
+                save.difficulty === d.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {d.emoji} {d.name.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {diff.desc} • Recompensas x{diff.rewardMult} • Chance de drop{" "}
+          {Math.round(diff.dropChance * 100)}%
+        </p>
+      </div>
 
       <div className="panel mb-4 p-4">
         <p className="text-[11px] font-black uppercase tracking-widest text-accent">
@@ -458,16 +486,22 @@ function Hub({
         </button>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <button
           onClick={onShop}
-          className="btn-block btn-block-press bg-accent text-accent-foreground"
+          className="btn-block btn-block-press bg-accent px-1 text-xs text-accent-foreground"
         >
           🏪 LOJA
         </button>
         <button
+          onClick={onGear}
+          className="btn-block btn-block-press bg-xp px-1 text-xs text-primary-foreground"
+        >
+          🎒 BUILD ({save.inventory.length})
+        </button>
+        <button
           onClick={onMenu}
-          className="btn-block btn-block-press bg-secondary text-secondary-foreground"
+          className="btn-block btn-block-press bg-secondary px-1 text-xs text-secondary-foreground"
         >
           🏰 MENU
         </button>
