@@ -144,10 +144,11 @@
 @utility bar-track {
   height: 0.9rem;
   border-radius: 999px;
-  background-color: oklch(0.16 0.03 265);
-  border: 2px solid oklch(0 0 0 / 0.4);
+  background-color: oklch(0.1 0.022 265);
+  border: 2px solid oklch(0 0 0 / 0.5);
   overflow: hidden;
 }
+
 
 @keyframes shake-hit {
   0%,
