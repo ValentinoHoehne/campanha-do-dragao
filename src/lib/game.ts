@@ -67,10 +67,15 @@ export interface Stage {
   id: number;
   name: string;
   zone: string;
+  world?: string;
   enemies: Enemy[];
 }
 
+export const WORLD_1 = "Mundo I — Reinos de Eldra";
+export const WORLD_2 = "Mundo II — Abismo Estelar";
+
 export const STAGES: Stage[] = [
+
   {
     id: 1,
     name: "Vila Inicial",
