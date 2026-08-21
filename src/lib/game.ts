@@ -138,7 +138,72 @@ export const STAGES: Stage[] = [
       },
     ],
   },
+  {
+    id: 7,
+    name: "Portal Estelar",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Espectro Sideral", emoji: "👻", hp: 300, atk: 52, def: 22, xp: 320, gold: 220 },
+      { name: "Larva do Vazio", emoji: "🪱", hp: 340, atk: 48, def: 26, xp: 340, gold: 235 },
+    ],
+  },
+  {
+    id: 8,
+    name: "Jardim de Cristal",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Golem Prismático", emoji: "💎", hp: 400, atk: 60, def: 32, xp: 420, gold: 290 },
+      { name: "Mariposa Astral", emoji: "🦋", hp: 360, atk: 68, def: 24, xp: 440, gold: 305 },
+    ],
+  },
+  {
+    id: 9,
+    name: "Mar de Antimatéria",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Kraken do Vazio", emoji: "🦑", hp: 500, atk: 76, def: 36, xp: 560, gold: 380 },
+      { name: "Devorador de Luz", emoji: "🕳️", hp: 470, atk: 84, def: 30, xp: 590, gold: 400 },
+    ],
+  },
+  {
+    id: 10,
+    name: "Cidadela Quebrada",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Sentinela Ruína", emoji: "🤖", hp: 620, atk: 96, def: 46, xp: 760, gold: 520 },
+      { name: "Arauto do Colapso", emoji: "☄️", hp: 580, atk: 108, def: 40, xp: 800, gold: 550 },
+    ],
+  },
+  {
+    id: 11,
+    name: "Coração do Abismo",
+    zone: "Fim do Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      {
+        name: "NYXAROTH, O DEVORADOR",
+        emoji: "🌌",
+        hp: 1100,
+        atk: 128,
+        def: 58,
+        xp: 2000,
+        gold: 1500,
+        boss: true,
+      },
+    ],
+  },
 ];
+
+export function stageWorld(s: Stage): string {
+  return s.world ?? WORLD_1;
+}
+
+export const FINAL_STAGE_ID = 11;
+
 
 /* ---------------- Dificuldade ---------------- */
 
