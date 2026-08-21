@@ -439,6 +439,8 @@ export interface Save {
   bonusDef: number;
   bonusHp: number;
   cleared: boolean;
+  abyssCleared?: boolean;
+
   difficulty: Difficulty;
   inventory: Item[];
   equipped: Partial<Record<Slot, Item>>;
