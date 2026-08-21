@@ -3,6 +3,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CLASSES,
   STAGES,
+  FINAL_STAGE_ID,
+  rollBossExclusive,
+  stageWorld,
   DIFFICULTIES,
   damage,
   getStage,
@@ -437,9 +440,13 @@ function Hub({
 
       {save.cleared && (
         <div className="panel mb-4 border-primary p-3 text-center">
-          <h3 className="text-xl text-primary">CAMPANHA CONCLUÍDA! 🏆</h3>
+          <h3 className="text-xl text-primary">
+            {save.abyssCleared ? "ABISMO ESTELAR DOMINADO! 🌌" : "CAMPANHA CONCLUÍDA! 🏆"}
+          </h3>
           <p className="text-xs text-muted-foreground">
-            Continue farmando o Dragão Sombrio para subir de nível.
+            {save.abyssCleared
+              ? "Você derrotou Nyxaroth. Continue farmando para subir de nível."
+              : "Avance para o Abismo Estelar e enfrente Nyxaroth."}
           </p>
         </div>
       )}
@@ -469,7 +476,7 @@ function Hub({
 
       <div className="panel mb-4 p-4">
         <p className="text-[11px] font-black uppercase tracking-widest text-accent">
-          Estágio {stage.id} de {STAGES.length}
+          {stageWorld(stage)} • Estágio {stage.id} de {STAGES.length}
         </p>
         <h2 className="text-2xl text-foreground">{stage.name}</h2>
         <p className="text-xs text-muted-foreground">{stage.zone}</p>
@@ -510,19 +517,26 @@ function Hub({
       <div className="panel p-3">
         <h3 className="mb-2 text-base text-foreground">Mapa da Campanha</h3>
         <ol className="space-y-1">
-          {STAGES.map((s) => {
+          {STAGES.map((s, i) => {
             const done = s.id < save.stage;
             const current = s.id === save.stage;
+            const newWorld = i === 0 || stageWorld(s) !== stageWorld(STAGES[i - 1]!);
             return (
-              <li
-                key={s.id}
-                className={`flex items-center gap-2 rounded-md px-2 py-1 text-xs font-bold ${
-                  current ? "bg-muted text-foreground" : "text-muted-foreground"
-                }`}
-              >
-                <span>{done ? "✅" : current ? "📍" : "🔒"}</span>
-                <span>
-                  {s.id}. {s.name}
+              <li key={s.id}>
+                {newWorld && (
+                  <p className="mt-2 mb-1 text-[10px] font-black uppercase tracking-widest text-accent">
+                    {stageWorld(s)}
+                  </p>
+                )}
+                <span
+                  className={`flex items-center gap-2 rounded-md px-2 py-1 text-xs font-bold ${
+                    current ? "bg-muted text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  <span>{done ? "✅" : current ? "📍" : "🔒"}</span>
+                  <span>
+                    {s.id}. {s.name}
+                  </span>
                 </span>
               </li>
             );
@@ -809,20 +823,24 @@ function Battle({
         level++;
         up = true;
       }
+      const isFinal = stage.id === FINAL_STAGE_ID;
       const nextStage =
-        enemy.boss || stage.id < save.stage ? save.stage : Math.min(save.stage + 1, STAGES.length);
-      const drop = rollDrop(stage.id, diff, !!enemy.boss);
+        isFinal || stage.id < save.stage ? save.stage : Math.min(save.stage + 1, STAGES.length);
+      const exclusive = enemy.boss ? rollBossExclusive(stage.id) : null;
+      const drop = exclusive ?? rollDrop(stage.id, diff, !!enemy.boss);
+      const worldBonus = isFinal && enemy.boss && !save.abyssCleared ? 1500 : 0;
       setSave({
         ...save,
         xp,
         level,
-        gold: save.gold + gold,
-        potions,
-        stage: enemy.boss ? save.stage : nextStage,
+        gold: save.gold + gold + worldBonus,
+        potions: worldBonus ? potions + 5 : potions,
+        stage: nextStage,
         cleared: save.cleared || !!enemy.boss,
+        abyssCleared: save.abyssCleared || (isFinal && !!enemy.boss),
         inventory: drop ? [...save.inventory, drop] : save.inventory,
       });
-      setResult({ win: true, xp: enemy.xp, gold, up, drop });
+      setResult({ win: true, xp: enemy.xp, gold: gold + worldBonus, up, drop });
     } else {
       setSave({ ...save, gold: Math.max(0, save.gold - 10), potions });
       setResult({ win: false, xp: 0, gold: 0, up: false, drop: null });
