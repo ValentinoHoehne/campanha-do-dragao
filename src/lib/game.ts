@@ -67,10 +67,15 @@ export interface Stage {
   id: number;
   name: string;
   zone: string;
+  world?: string;
   enemies: Enemy[];
 }
 
+export const WORLD_1 = "Mundo I — Reinos de Eldra";
+export const WORLD_2 = "Mundo II — Abismo Estelar";
+
 export const STAGES: Stage[] = [
+
   {
     id: 1,
     name: "Vila Inicial",
@@ -133,7 +138,72 @@ export const STAGES: Stage[] = [
       },
     ],
   },
+  {
+    id: 7,
+    name: "Portal Estelar",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Espectro Sideral", emoji: "👻", hp: 300, atk: 52, def: 22, xp: 320, gold: 220 },
+      { name: "Larva do Vazio", emoji: "🪱", hp: 340, atk: 48, def: 26, xp: 340, gold: 235 },
+    ],
+  },
+  {
+    id: 8,
+    name: "Jardim de Cristal",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Golem Prismático", emoji: "💎", hp: 400, atk: 60, def: 32, xp: 420, gold: 290 },
+      { name: "Mariposa Astral", emoji: "🦋", hp: 360, atk: 68, def: 24, xp: 440, gold: 305 },
+    ],
+  },
+  {
+    id: 9,
+    name: "Mar de Antimatéria",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Kraken do Vazio", emoji: "🦑", hp: 500, atk: 76, def: 36, xp: 560, gold: 380 },
+      { name: "Devorador de Luz", emoji: "🕳️", hp: 470, atk: 84, def: 30, xp: 590, gold: 400 },
+    ],
+  },
+  {
+    id: 10,
+    name: "Cidadela Quebrada",
+    zone: "Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      { name: "Sentinela Ruína", emoji: "🤖", hp: 620, atk: 96, def: 46, xp: 760, gold: 520 },
+      { name: "Arauto do Colapso", emoji: "☄️", hp: 580, atk: 108, def: 40, xp: 800, gold: 550 },
+    ],
+  },
+  {
+    id: 11,
+    name: "Coração do Abismo",
+    zone: "Fim do Abismo Estelar",
+    world: WORLD_2,
+    enemies: [
+      {
+        name: "NYXAROTH, O DEVORADOR",
+        emoji: "🌌",
+        hp: 1100,
+        atk: 128,
+        def: 58,
+        xp: 2000,
+        gold: 1500,
+        boss: true,
+      },
+    ],
+  },
 ];
+
+export function stageWorld(s: Stage): string {
+  return s.world ?? WORLD_1;
+}
+
+export const FINAL_STAGE_ID = 11;
+
 
 /* ---------------- Dificuldade ---------------- */
 
@@ -297,6 +367,56 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
   };
 }
 
+/* --- Drops exclusivos do chefe do Abismo Estelar (estágio 11) --- */
+
+const ABYSS_BOSS_ITEMS: Omit<Item, "uid">[] = [
+  {
+    name: "Lâmina de Nyxaroth",
+    emoji: "🌠",
+    slot: "arma",
+    rarity: "lendario",
+    atk: 62,
+    def: 0,
+    hp: 0,
+    crit: 22,
+  },
+  {
+    name: "Couraça do Vazio",
+    emoji: "🌑",
+    slot: "armadura",
+    rarity: "lendario",
+    atk: 0,
+    def: 48,
+    hp: 180,
+    crit: 0,
+  },
+  {
+    name: "Olho do Abismo",
+    emoji: "👁️",
+    slot: "acessorio",
+    rarity: "lendario",
+    atk: 24,
+    def: 14,
+    hp: 90,
+    crit: 30,
+  },
+];
+
+export function rollBossExclusive(stageId: number): Item | null {
+  if (stageId !== FINAL_STAGE_ID) return null;
+  const base = pick(ABYSS_BOSS_ITEMS);
+  const jitter = () => 0.92 + Math.random() * 0.16;
+  return {
+    ...base,
+    uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    atk: Math.round(base.atk * jitter()),
+    def: Math.round(base.def * jitter()),
+    hp: Math.round(base.hp * jitter()),
+    crit: Math.round(base.crit * jitter()),
+  };
+}
+
+
 export function itemPower(i: Item) {
   return i.atk * 3 + i.def * 3 + i.hp + i.crit * 2;
 }
@@ -319,6 +439,8 @@ export interface Save {
   bonusDef: number;
   bonusHp: number;
   cleared: boolean;
+  abyssCleared?: boolean;
+
   difficulty: Difficulty;
   inventory: Item[];
   equipped: Partial<Record<Slot, Item>>;
@@ -371,6 +493,7 @@ export function newSave(classId: ClassId, name: string): Save {
     bonusDef: 0,
     bonusHp: 0,
     cleared: false,
+    abyssCleared: false,
     difficulty: "medio",
     inventory: [],
     equipped: {},
@@ -381,6 +504,7 @@ export function migrate(s: Save): Save {
   return {
     ...s,
     difficulty: s.difficulty ?? "medio",
+    abyssCleared: s.abyssCleared ?? false,
     inventory: Array.isArray(s.inventory) ? s.inventory : [],
     equipped: s.equipped ?? {},
   };
