@@ -493,6 +493,7 @@ export function newSave(classId: ClassId, name: string): Save {
     bonusDef: 0,
     bonusHp: 0,
     cleared: false,
+    abyssCleared: false,
     difficulty: "medio",
     inventory: [],
     equipped: {},
@@ -503,6 +504,7 @@ export function migrate(s: Save): Save {
   return {
     ...s,
     difficulty: s.difficulty ?? "medio",
+    abyssCleared: s.abyssCleared ?? false,
     inventory: Array.isArray(s.inventory) ? s.inventory : [],
     equipped: s.equipped ?? {},
   };
