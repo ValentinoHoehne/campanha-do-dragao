@@ -1,14 +1,18 @@
-# Welcome to your Lovable project
+# Meu Primeiro Rpg
+
+Cria um aplicativo sobre um RPG q tenha as características de uma campanha média do roblox e me dê o apk pra baixar
 
 This project was built with [Lovable](https://lovable.dev).
 
+**Live app**: https://campanha-do-dragao.lovable.app
+
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ae5929a3-73f1-4aa6-a3b8-9c3ebeaf4e77).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +24,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
