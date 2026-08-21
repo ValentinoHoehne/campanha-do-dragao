@@ -1,4 +1,6 @@
-export type ClassId = "guerreiro" | "mago" | "ladino";
+export type ClassId = "guerreiro" | "mago" | "ladino" | "arqueiro" | "hibrido";
+
+export type DamageType = "fisico" | "especial";
 
 export interface HeroClass {
   id: ClassId;
@@ -6,8 +8,12 @@ export interface HeroClass {
   emoji: string;
   desc: string;
   hp: number;
-  atk: number;
-  def: number;
+  atk: number; // ataque físico
+  def: number; // defesa física
+  satk: number; // ataque especial
+  sdef: number; // defesa especial
+  attackType: DamageType; // tipo do ataque básico
+  skillType: DamageType;
   skillName: string;
   skillDesc: string;
   skillCost: number;
@@ -22,6 +28,10 @@ export const CLASSES: HeroClass[] = [
     hp: 120,
     atk: 14,
     def: 8,
+    satk: 4,
+    sdef: 5,
+    attackType: "fisico",
+    skillType: "fisico",
     skillName: "Golpe Brutal",
     skillDesc: "Dano pesado (x2) ignorando metade da defesa.",
     skillCost: 3,
@@ -32,8 +42,12 @@ export const CLASSES: HeroClass[] = [
     emoji: "🔮",
     desc: "Dano mágico alto, mas frágil.",
     hp: 85,
-    atk: 22,
+    atk: 8,
     def: 3,
+    satk: 22,
+    sdef: 11,
+    attackType: "especial",
+    skillType: "especial",
     skillName: "Bola de Fogo",
     skillDesc: "Explosão mágica (x2.4) que ignora a defesa.",
     skillCost: 4,
@@ -46,9 +60,45 @@ export const CLASSES: HeroClass[] = [
     hp: 95,
     atk: 17,
     def: 5,
+    satk: 6,
+    sdef: 5,
+    attackType: "fisico",
+    skillType: "fisico",
     skillName: "Ataque Furtivo",
     skillDesc: "Acerto crítico garantido (x2.2) e +ouro.",
     skillCost: 3,
+  },
+  {
+    id: "arqueiro",
+    name: "Arqueiro",
+    emoji: "🏹",
+    desc: "Atirador de flechas de luz. Físico, preciso e letal à distância.",
+    hp: 92,
+    atk: 20,
+    def: 6,
+    satk: 5,
+    sdef: 4,
+    attackType: "fisico",
+    skillType: "fisico",
+    skillName: "Chuva de Luz",
+    skillDesc: "Rajada de flechas luminosas (x2.1 físico) ignorando metade da defesa.",
+    skillCost: 3,
+  },
+  {
+    id: "hibrido",
+    name: "Híbrido",
+    emoji: "🐲",
+    desc: "Cospe fogo. Dano especial alto com resistência mágica.",
+    hp: 102,
+    atk: 12,
+    def: 6,
+    satk: 18,
+    sdef: 9,
+    attackType: "especial",
+    skillType: "especial",
+    skillName: "Sopro Flamejante",
+    skillDesc: "Jato de fogo (x2.3 especial) que ignora a defesa especial.",
+    skillCost: 4,
   },
 ];
 
@@ -56,8 +106,11 @@ export interface Enemy {
   name: string;
   emoji: string;
   hp: number;
-  atk: number;
-  def: number;
+  atk: number; // ataque físico
+  def: number; // defesa física
+  satk?: number; // ataque especial (padrão derivado)
+  sdef?: number; // defesa especial (padrão derivado)
+  attackType?: DamageType;
   xp: number;
   gold: number;
   boss?: boolean;
@@ -257,12 +310,31 @@ export function getDifficulty(id: Difficulty): DifficultyDef {
   return DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES[1]!;
 }
 
+export function enemySAtk(e: Enemy) {
+  return e.satk ?? Math.round(e.atk * 0.7);
+}
+
+export function enemySDef(e: Enemy) {
+  return e.sdef ?? Math.round(e.def * 0.8);
+}
+
+export function enemyAtkFor(e: Enemy, type: DamageType) {
+  return type === "especial" ? enemySAtk(e) : e.atk;
+}
+
+export function enemyDefFor(e: Enemy, type: DamageType) {
+  return type === "especial" ? enemySDef(e) : e.def;
+}
+
 export function scaleEnemy(enemy: Enemy, diff: DifficultyDef): Enemy {
   return {
     ...enemy,
     hp: Math.round(enemy.hp * diff.enemyMult),
     atk: Math.round(enemy.atk * diff.enemyMult),
     def: Math.round(enemy.def * diff.enemyMult),
+    satk: Math.round(enemySAtk(enemy) * diff.enemyMult),
+    sdef: Math.round(enemySDef(enemy) * diff.enemyMult),
+    attackType: enemy.attackType ?? "fisico",
     xp: Math.round(enemy.xp * diff.rewardMult),
     gold: Math.round(enemy.gold * diff.rewardMult),
   };
@@ -279,8 +351,10 @@ export interface Item {
   emoji: string;
   slot: Slot;
   rarity: Rarity;
-  atk: number;
-  def: number;
+  atk: number; // ataque físico
+  def: number; // defesa física
+  satk?: number; // ataque especial
+  sdef?: number; // defesa especial
   hp: number;
   crit: number; // % de chance de crítico
 }
@@ -296,12 +370,17 @@ export function rarityDef(r: Rarity) {
   return RARITIES.find((x) => x.id === r) ?? RARITIES[0]!;
 }
 
-const SLOT_BASES: Record<Slot, { names: string[]; emojis: string[]; atk: number; def: number; hp: number; crit: number }> = {
+const SLOT_BASES: Record<
+  Slot,
+  { names: string[]; emojis: string[]; atk: number; def: number; satk: number; sdef: number; hp: number; crit: number }
+> = {
   arma: {
-    names: ["Lâmina", "Machado", "Cajado", "Adaga", "Martelo"],
-    emojis: ["⚔️", "🪓", "🔱", "🗡️", "🔨"],
+    names: ["Lâmina", "Machado", "Cajado", "Adaga", "Martelo", "Arco"],
+    emojis: ["⚔️", "🪓", "🔱", "🗡️", "🔨", "🏹"],
     atk: 5,
     def: 0,
+    satk: 4,
+    sdef: 0,
     hp: 0,
     crit: 3,
   },
@@ -310,6 +389,8 @@ const SLOT_BASES: Record<Slot, { names: string[]; emojis: string[]; atk: number;
     emojis: ["🛡️", "🧥", "🥋", "🦺"],
     atk: 0,
     def: 4,
+    satk: 0,
+    sdef: 3,
     hp: 14,
     crit: 0,
   },
@@ -318,6 +399,8 @@ const SLOT_BASES: Record<Slot, { names: string[]; emojis: string[]; atk: number;
     emojis: ["💍", "📿", "🔮", "⛑️"],
     atk: 2,
     def: 1,
+    satk: 2,
+    sdef: 1,
     hp: 8,
     crit: 4,
   },
@@ -354,14 +437,17 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
   const tier = 1 + (stageId - 1) * 0.55;
   const scale = tier * rd.mult;
   const jitter = () => 0.85 + Math.random() * 0.3;
+  const focus: DamageType = Math.random() < 0.5 ? "fisico" : "especial";
   return {
     uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: `${pick(base.names)} ${pick(SUFFIXES[rarity])}`,
     emoji: pick(base.emojis),
     slot,
     rarity,
-    atk: Math.round(base.atk * scale * jitter()),
-    def: Math.round(base.def * scale * jitter()),
+    atk: Math.round(base.atk * scale * jitter() * (focus === "fisico" ? 1.25 : 0.45)),
+    def: Math.round(base.def * scale * jitter() * (focus === "fisico" ? 1.2 : 0.6)),
+    satk: Math.round(base.satk * scale * jitter() * (focus === "especial" ? 1.25 : 0.45)),
+    sdef: Math.round(base.sdef * scale * jitter() * (focus === "especial" ? 1.2 : 0.6)),
     hp: Math.round(base.hp * scale * jitter()),
     crit: Math.round(base.crit * rd.mult * jitter()),
   };
@@ -418,7 +504,7 @@ export function rollBossExclusive(stageId: number): Item | null {
 
 
 export function itemPower(i: Item) {
-  return i.atk * 3 + i.def * 3 + i.hp + i.crit * 2;
+  return (i.atk + (i.satk ?? 0)) * 3 + (i.def + (i.sdef ?? 0)) * 3 + i.hp + i.crit * 2;
 }
 
 export function sellPrice(i: Item) {
