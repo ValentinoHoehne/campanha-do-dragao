@@ -367,6 +367,56 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
   };
 }
 
+/* --- Drops exclusivos do chefe do Abismo Estelar (estágio 11) --- */
+
+const ABYSS_BOSS_ITEMS: Omit<Item, "uid">[] = [
+  {
+    name: "Lâmina de Nyxaroth",
+    emoji: "🌠",
+    slot: "arma",
+    rarity: "lendario",
+    atk: 62,
+    def: 0,
+    hp: 0,
+    crit: 22,
+  },
+  {
+    name: "Couraça do Vazio",
+    emoji: "🌑",
+    slot: "armadura",
+    rarity: "lendario",
+    atk: 0,
+    def: 48,
+    hp: 180,
+    crit: 0,
+  },
+  {
+    name: "Olho do Abismo",
+    emoji: "👁️",
+    slot: "acessorio",
+    rarity: "lendario",
+    atk: 24,
+    def: 14,
+    hp: 90,
+    crit: 30,
+  },
+];
+
+export function rollBossExclusive(stageId: number): Item | null {
+  if (stageId !== FINAL_STAGE_ID) return null;
+  const base = pick(ABYSS_BOSS_ITEMS);
+  const jitter = () => 0.92 + Math.random() * 0.16;
+  return {
+    ...base,
+    uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    atk: Math.round(base.atk * jitter()),
+    def: Math.round(base.def * jitter()),
+    hp: Math.round(base.hp * jitter()),
+    crit: Math.round(base.crit * jitter()),
+  };
+}
+
+
 export function itemPower(i: Item) {
   return i.atk * 3 + i.def * 3 + i.hp + i.crit * 2;
 }
