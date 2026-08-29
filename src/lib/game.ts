@@ -7,6 +7,7 @@ export interface HeroClass {
   name: string;
   emoji: string;
   desc: string;
+  lore: string;
   hp: number;
   atk: number; // ataque físico
   def: number; // defesa física
@@ -25,6 +26,7 @@ export const CLASSES: HeroClass[] = [
     name: "Guerreiro",
     emoji: "🛡️",
     desc: "Tanque bruto. Muita vida, aguenta pancada.",
+    lore: "Defensor nato dos Reinos de Eldra, o Guerreiro representa a força física bruta e a proteção inabalável dos ideais humanos.",
     hp: 115,
     atk: 13,
     def: 8,
@@ -41,6 +43,7 @@ export const CLASSES: HeroClass[] = [
     name: "Mago",
     emoji: "🔮",
     desc: "Dano mágico alto, mas frágil.",
+    lore: "Um estudioso das energias arcanas que busca compreender a instabilidade elemental deixada pela destruição do Núcleo.",
     hp: 85,
     atk: 12,
     def: 3,
@@ -57,6 +60,7 @@ export const CLASSES: HeroClass[] = [
     name: "Ladino",
     emoji: "🗡️",
     desc: "Rápido e crítico. Rouba ouro extra.",
+    lore: "Mestre da técnica e precisão, o Ladino prefere a sutileza da lâmina e o oportunismo das sombras para sobreviver.",
     hp: 95,
     atk: 17,
     def: 5,
@@ -73,6 +77,7 @@ export const CLASSES: HeroClass[] = [
     name: "Arqueiro",
     emoji: "🏹",
     desc: "Atirador de flechas de luz. Físico, preciso e letal à distância.",
+    lore: "Seus arcos disparam flechas de luz pura, criadas a partir de energia condensada do Núcleo, tornando-o parte intrínseca do mundo.",
     hp: 92,
     atk: 20,
     def: 6,
@@ -89,6 +94,7 @@ export const CLASSES: HeroClass[] = [
     name: "Híbrido",
     emoji: "🐲",
     desc: "Cospe fogo. Dano especial alto com resistência mágica.",
+    lore: "Após absorver fragmentos do Núcleo em seu próprio corpo, o Híbrido libera chamas instáveis e poder elemental incontrolável.",
     hp: 102,
     atk: 12,
     def: 6,
@@ -122,17 +128,21 @@ export interface Stage {
   zone: string;
   world?: string;
   enemies: Enemy[];
+  postBossMessage?: string;
 }
 
-export const WORLD_1 = "Mundo I — Reinos de Eldra";
-export const WORLD_2 = "Mundo II — Abismo Estelar";
+export const WORLD_1 = "Mundo I — Terras Devastadas";
+export const WORLD_2 = "Mundo II — Reino das Cinzas";
+export const WORLD_3 = "Mundo III — Abismo Arcano";
+export const WORLD_4 = "Mundo IV — Reino Celestial";
+export const WORLD_5 = "Mundo V — O Coração Partido";
 
 export const STAGES: Stage[] = [
-
   {
     id: 1,
-    name: "Vila Inicial",
-    zone: "Planície dos Novatos",
+    name: "Vila em Ruínas",
+    zone: "Terras Devastadas",
+    world: WORLD_1,
     enemies: [
       { name: "Slime Azul", emoji: "🟦", hp: 40, atk: 8, def: 2, xp: 20, gold: 12 },
       { name: "Rato Gigante", emoji: "🐀", hp: 52, atk: 10, def: 3, xp: 26, gold: 16 },
@@ -140,8 +150,9 @@ export const STAGES: Stage[] = [
   },
   {
     id: 2,
-    name: "Floresta Sombria",
-    zone: "Bosque Amaldiçoado",
+    name: "Floresta Corrompida",
+    zone: "Terras Devastadas",
+    world: WORLD_1,
     enemies: [
       { name: "Lobo Faminto", emoji: "🐺", hp: 70, atk: 14, def: 4, xp: 40, gold: 24 },
       { name: "Aranha Venenosa", emoji: "🕷️", hp: 80, atk: 16, def: 5, xp: 48, gold: 30 },
@@ -149,105 +160,157 @@ export const STAGES: Stage[] = [
   },
   {
     id: 3,
-    name: "Mina Abandonada",
-    zone: "Túneis de Obsidiana",
+    name: "Mina de Cristais",
+    zone: "Terras Devastadas",
+    world: WORLD_1,
     enemies: [
-      { name: "Goblin Minerador", emoji: "👺", hp: 100, atk: 19, def: 7, xp: 65, gold: 45 },
-      { name: "Golem de Pedra", emoji: "🪨", hp: 140, atk: 21, def: 12, xp: 85, gold: 60 },
+      {
+        name: "GUARDIÃO DA RUÍNA",
+        emoji: "🗿",
+        hp: 200,
+        atk: 24,
+        def: 12,
+        xp: 150,
+        gold: 100,
+        boss: true,
+      },
     ],
+    postBossMessage: "Um fragmento despertou. Faltam quatro.",
   },
   {
     id: 4,
-    name: "Castelo de Gelo",
-    zone: "Pico Congelado",
+    name: "Passagem das Cinzas",
+    zone: "Reino das Cinzas",
+    world: WORLD_2,
     enemies: [
-      { name: "Cavaleiro Gélido", emoji: "🧊", hp: 160, atk: 26, def: 12, xp: 110, gold: 80 },
-      { name: "Feiticeira do Norte", emoji: "❄️", hp: 150, atk: 32, def: 8, xp: 130, gold: 95 },
+      { name: "Imp Flamejante", emoji: "🔥", hp: 160, atk: 28, def: 10, xp: 120, gold: 85 },
+      { name: "Esqueleto Carbonizado", emoji: "💀", hp: 180, atk: 32, def: 12, xp: 140, gold: 95 },
     ],
   },
   {
     id: 5,
-    name: "Vulcão Ancião",
-    zone: "Cratera Escaldante",
+    name: "Fortaleza Vulcânica",
+    zone: "Reino das Cinzas",
+    world: WORLD_2,
     enemies: [
-      { name: "Imp Flamejante", emoji: "🔥", hp: 190, atk: 34, def: 12, xp: 165, gold: 120 },
-      { name: "Guardião de Lava", emoji: "🌋", hp: 240, atk: 38, def: 16, xp: 200, gold: 150 },
+      {
+        name: "SENHOR DAS CINZAS",
+        emoji: "🔥",
+        hp: 380,
+        atk: 42,
+        def: 18,
+        xp: 400,
+        gold: 300,
+        boss: true,
+      },
     ],
+    postBossMessage: "Você continua reunindo os fragmentos... exatamente como ele planejou.",
   },
   {
     id: 6,
-    name: "Trono do Dragão",
-    zone: "Fim da Campanha",
+    name: "Torres Flutuantes",
+    zone: "Abismo Arcano",
+    world: WORLD_3,
     enemies: [
-      {
-        name: "DRAGÃO SOMBRIO",
-        emoji: "🐉",
-        hp: 420,
-        atk: 46,
-        def: 20,
-        xp: 500,
-        gold: 400,
-        boss: true,
-      },
+      { name: "Olho Arcano", emoji: "👁️", hp: 280, atk: 48, def: 20, xp: 280, gold: 180 },
+      { name: "Elemental Instável", emoji: "🌀", hp: 300, atk: 54, def: 22, xp: 300, gold: 200 },
     ],
   },
   {
     id: 7,
-    name: "Portal Estelar",
-    zone: "Abismo Estelar",
-    world: WORLD_2,
+    name: "Biblioteca Proibida",
+    zone: "Abismo Arcano",
+    world: WORLD_3,
     enemies: [
-      { name: "Espectro Sideral", emoji: "👻", hp: 300, atk: 52, def: 22, xp: 320, gold: 220 },
-      { name: "Larva do Vazio", emoji: "🪱", hp: 340, atk: 48, def: 26, xp: 340, gold: 235 },
+      {
+        name: "ARQUIMAGO CORROMPIDO",
+        emoji: "🧙",
+        hp: 600,
+        atk: 68,
+        def: 26,
+        xp: 700,
+        gold: 500,
+        boss: true,
+      },
     ],
+    postBossMessage: "O Núcleo não era apenas uma fonte de energia. Era também um selo.",
   },
   {
     id: 8,
-    name: "Jardim de Cristal",
-    zone: "Abismo Estelar",
-    world: WORLD_2,
+    name: "Templo da Luz",
+    zone: "Reino Celestial",
+    world: WORLD_4,
     enemies: [
-      { name: "Golem Prismático", emoji: "💎", hp: 400, atk: 60, def: 32, xp: 420, gold: 290 },
-      { name: "Mariposa Astral", emoji: "🦋", hp: 360, atk: 68, def: 24, xp: 440, gold: 305 },
+      { name: "Anjo Caído", emoji: "👼", hp: 450, atk: 78, def: 32, xp: 550, gold: 350 },
+      { name: "Gárgula de Ouro", emoji: "🛡️", hp: 500, atk: 82, def: 40, xp: 600, gold: 380 },
     ],
   },
   {
     id: 9,
-    name: "Mar de Antimatéria",
-    zone: "Abismo Estelar",
-    world: WORLD_2,
+    name: "Pico das Nuvens",
+    zone: "Reino Celestial",
+    world: WORLD_4,
     enemies: [
-      { name: "Kraken do Vazio", emoji: "🦑", hp: 500, atk: 76, def: 36, xp: 560, gold: 380 },
-      { name: "Devorador de Luz", emoji: "🕳️", hp: 470, atk: 84, def: 30, xp: 590, gold: 400 },
+      {
+        name: "SENTINELA CELESTIAL",
+        emoji: "⚔️",
+        hp: 850,
+        atk: 96,
+        def: 45,
+        xp: 1200,
+        gold: 800,
+        boss: true,
+      },
     ],
+    postBossMessage: "A energia celestial está diretamente ligada ao Núcleo. O Arquiteto aguarda.",
   },
   {
     id: 10,
-    name: "Cidadela Quebrada",
-    zone: "Abismo Estelar",
-    world: WORLD_2,
+    name: "Fronteira do Vazio",
+    zone: "O Coração Partido",
+    world: WORLD_5,
     enemies: [
-      { name: "Sentinela Ruína", emoji: "🤖", hp: 620, atk: 96, def: 46, xp: 760, gold: 520 },
-      { name: "Arauto do Colapso", emoji: "☄️", hp: 580, atk: 108, def: 40, xp: 800, gold: 550 },
+      { name: "Sombra Devoradora", emoji: "🌑", hp: 600, atk: 105, def: 42, xp: 900, gold: 600 },
+      { name: "Arauto da Noite", emoji: "🌌", hp: 650, atk: 112, def: 46, xp: 950, gold: 650 },
     ],
   },
   {
     id: 11,
-    name: "Coração do Abismo",
-    zone: "Fim do Abismo Estelar",
-    world: WORLD_2,
+    name: "O Altar do Núcleo",
+    zone: "O Coração Partido",
+    world: WORLD_5,
     enemies: [
       {
-        name: "NYXAROTH, O DEVORADOR",
-        emoji: "🌌",
-        hp: 1100,
-        atk: 128,
-        def: 58,
-        xp: 2000,
+        name: "DRAGÃO ROXO MASSIÇO",
+        emoji: "🐉",
+        hp: 1200,
+        atk: 135,
+        def: 60,
+        xp: 2500,
         gold: 1500,
         boss: true,
       },
     ],
+    postBossMessage: "A energia corrompida foi liberada. O Arquiteto se revela.",
+  },
+  {
+    id: 12,
+    name: "Confronto Final",
+    zone: "O Coração Partido",
+    world: WORLD_5,
+    enemies: [
+      {
+        name: "O ARQUITETO",
+        emoji: "👑",
+        hp: 1800,
+        atk: 160,
+        def: 75,
+        xp: 5000,
+        gold: 3000,
+        boss: true,
+      },
+    ],
+    postBossMessage: "O Núcleo foi restaurado. Mas o que despertou não deveria existir...",
   },
 ];
 
@@ -255,7 +318,7 @@ export function stageWorld(s: Stage): string {
   return s.world ?? WORLD_1;
 }
 
-export const FINAL_STAGE_ID = 11;
+export const FINAL_STAGE_ID = 12;
 
 
 /* ---------------- Dificuldade ---------------- */
@@ -533,6 +596,8 @@ export interface Save {
   consecutiveLosses: number;
   battleDeaths: number;
   lastBattleStageId: number;
+  unlockedChronicles: string[];
+  runsCompleted: number;
 }
 
 export const SAVE_KEY = "rpg-campanha-save-v1";
@@ -599,6 +664,8 @@ export function newSave(classId: ClassId, name: string): Save {
     consecutiveLosses: 0,
     battleDeaths: 0,
     lastBattleStageId: 0,
+    unlockedChronicles: [],
+    runsCompleted: 0,
   };
 }
 
@@ -612,6 +679,8 @@ export function migrate(s: Save): Save {
     consecutiveLosses: s.consecutiveLosses ?? 0,
     battleDeaths: s.battleDeaths ?? 0,
     lastBattleStageId: s.lastBattleStageId ?? 0,
+    unlockedChronicles: s.unlockedChronicles ?? [],
+    runsCompleted: s.runsCompleted ?? 0,
   };
 }
 
@@ -643,3 +712,39 @@ export function getStage(id: number): Stage {
 export function pickEnemy(stage: Stage): Enemy {
   return stage.enemies[Math.floor(Math.random() * stage.enemies.length)]!;
 }
+
+/* ---------------- Crônicas ---------------- */
+
+export interface ChronicleEntry {
+  id: string;
+  title: string;
+  desc: string;
+}
+
+export const CHRONICLES: ChronicleEntry[] = [
+  {
+    id: "fragmento_1",
+    title: "Fragmento I: O Despertar",
+    desc: "Um fragmento misterioso de energia pura, recuperado nas Terras Devastadas. O mundo começa a reagir à sua presença.",
+  },
+  {
+    id: "fragmento_2",
+    title: "Fragmento II: A Manipulação",
+    desc: "O Senhor das Cinzas sugeriu que a nossa busca pelos fragmentos faz parte de um plano maior. Alguém nos observa.",
+  },
+  {
+    id: "fragmento_3",
+    title: "Fragmento III: O Selo",
+    desc: "Registros antigos no Abismo Arcano revelam que o Núcleo não era apenas energia; era uma prisão para algo terrível.",
+  },
+  {
+    id: "fragmento_4",
+    title: "Fragmento IV: A Conexão",
+    desc: "A energia celestial pulsa em sincronia com os fragmentos. O Arquiteto está perto de concluir sua obra.",
+  },
+  {
+    id: "revelacao",
+    title: "Revelação: A Verdade",
+    desc: "O Núcleo foi restaurado, mas a vitória foi uma ilusão. Nós libertamos o Vazio. O verdadeiro inimigo despertou.",
+  },
+];

@@ -35,6 +35,8 @@ import {
   type Item,
   type Save,
   type Slot,
+  type ChronicleEntry,
+  CHRONICLES,
 } from "@/lib/game";
 
 export const Route = createFileRoute("/")({
@@ -66,6 +68,65 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
         className="h-full rounded-full transition-all duration-300"
         style={{ width: `${pct}%`, backgroundColor: `var(--${color})` }}
       />
+    </div>
+  );
+}
+
+function StoryDialog({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/90 p-6 backdrop-blur-md">
+      <div className="panel max-w-sm p-6 text-center shadow-2xl border-primary animate-in fade-in zoom-in duration-300">
+        <div className="mb-4 text-4xl">📜</div>
+        <p className="font-display text-lg leading-relaxed text-foreground italic mb-6">
+          "{message}"
+        </p>
+        <button
+          onClick={onClose}
+          className="btn-block btn-block-press w-full bg-primary text-primary-foreground"
+        >
+          CONTINUAR
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Chronicles({
+  unlocked,
+  onClose,
+}: {
+  unlocked: string[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
+      <div className="panel w-full max-w-sm p-4 max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-xl text-primary">Crônicas do Núcleo</h2>
+          <button onClick={onClose} className="text-muted-foreground text-xs font-bold">FECHAR</button>
+        </div>
+        <div className="space-y-3">
+          {CHRONICLES.map((c) => {
+            const isUnlocked = unlocked.includes(c.id);
+            return (
+              <div key={c.id} className={`p-3 rounded-lg border-2 ${isUnlocked ? 'border-border bg-muted/30' : 'border-dashed border-muted opacity-50'}`}>
+                <h3 className="text-sm font-black text-foreground mb-1">
+                  {isUnlocked ? c.title : "???"}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {isUnlocked ? c.desc : "Continue sua jornada para revelar esta história."}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -365,6 +426,9 @@ function Create({
                 <div className="flex-1">
                   <h3 className="text-xl text-foreground">{c.name}</h3>
                   <p className="text-xs text-muted-foreground">{c.desc}</p>
+                  <p className="mt-1 text-[10px] italic text-accent/80 leading-tight line-clamp-2">
+                    {c.lore}
+                  </p>
                   <div className="mt-1 flex gap-3 text-[11px] font-black">
                     <span className="text-hp">HP {c.hp}</span>
                     <span className="text-primary">ATK {c.atk}</span>
@@ -442,11 +506,19 @@ function Hub({
   onMenu: () => void;
   onRecovery: () => void;
 }) {
+  const [showChronicles, setShowChronicles] = useState(false);
   const stage = getStage(save.stage);
   const diff = getDifficulty(save.difficulty);
   return (
     <div>
       <StatusBar save={save} />
+
+      {showChronicles && (
+        <Chronicles
+          unlocked={save.unlockedChronicles}
+          onClose={() => setShowChronicles(false)}
+        />
+      )}
 
       {save.consecutiveLosses >= 3 && save.stage > 1 && (
         <div className="panel mb-4 border-accent p-3 text-center bg-accent/10">
@@ -518,22 +590,28 @@ function Hub({
         </button>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
+      <div className="mb-4 grid grid-cols-4 gap-2">
         <button
           onClick={onShop}
-          className="btn-block btn-block-press bg-accent px-1 text-xs text-accent-foreground"
+          className="btn-block btn-block-press bg-accent px-1 text-[10px] text-accent-foreground"
         >
           🏪 LOJA
         </button>
         <button
           onClick={onGear}
-          className="btn-block btn-block-press bg-xp px-1 text-xs text-primary-foreground"
+          className="btn-block btn-block-press bg-xp px-1 text-[10px] text-primary-foreground"
         >
-          🎒 BUILD ({save.inventory.length})
+          🎒 BUILD
+        </button>
+        <button
+          onClick={() => setShowChronicles(true)}
+          className="btn-block btn-block-press bg-primary px-1 text-[10px] text-primary-foreground"
+        >
+          📜 CRÔNICAS
         </button>
         <button
           onClick={onMenu}
-          className="btn-block btn-block-press bg-secondary px-1 text-xs text-secondary-foreground"
+          className="btn-block btn-block-press bg-secondary px-1 text-[10px] text-secondary-foreground"
         >
           🏰 MENU
         </button>
@@ -814,11 +892,12 @@ function Battle({
   const cls = CLASSES.find((c) => c.id === save.classId)!;
   const stage = getStage(save.stage);
   const diff = getDifficulty(save.difficulty);
-  const enemy = useMemo<Enemy>(() => scaleEnemy(pickEnemy(stage), diff), [stage, diff]);
+  const initialEnemy = useMemo<Enemy>(() => scaleEnemy(pickEnemy(stage), diff), [stage, diff]);
 
   const hpMax = maxHp(save);
   const [hp, setHp] = useState(hpMax);
-  const [ehp, setEhp] = useState(enemy.hp);
+  const [enemy, setEnemy] = useState<Enemy>(initialEnemy);
+  const [ehp, setEhp] = useState(initialEnemy.hp);
   const [energy, setEnergy] = useState(2);
   const [potions, setPotions] = useState(save.potions);
   const [log, setLog] = useState<string[]>([`Um ${enemy.name} selvagem apareceu! (${diff.name})`]);
@@ -826,6 +905,7 @@ function Battle({
   const [hitEnemy, setHitEnemy] = useState(false);
   const [hitHero, setHitHero] = useState(false);
   const [pop, setPop] = useState<{ t: string; k: number } | null>(null);
+  const [story, setStory] = useState<string | null>(null);
   const [result, setResult] = useState<
     null | { win: boolean; xp: number; gold: number; up: boolean; drop: Item | null }
   >(null);
@@ -839,6 +919,11 @@ function Battle({
 
   function finish(win: boolean) {
     if (win) {
+      // Check for story messages
+      if (stage.postBossMessage) {
+        setStory(stage.postBossMessage);
+      }
+
       const gold = enemy.gold + (save.classId === "ladino" ? Math.round(enemy.gold * 0.2) : 0);
       let xp = save.xp + enemy.xp;
       let level = save.level;
@@ -848,9 +933,18 @@ function Battle({
         level++;
         up = true;
       }
+
       const isFinal = stage.id === FINAL_STAGE_ID;
       const nextStage =
         isFinal || stage.id < save.stage ? save.stage : Math.min(save.stage + 1, STAGES.length);
+
+      const unlocked = [...save.unlockedChronicles];
+      if (stage.id === 3 && !unlocked.includes("fragmento_1")) unlocked.push("fragmento_1");
+      if (stage.id === 5 && !unlocked.includes("fragmento_2")) unlocked.push("fragmento_2");
+      if (stage.id === 7 && !unlocked.includes("fragmento_3")) unlocked.push("fragmento_3");
+      if (stage.id === 9 && !unlocked.includes("fragmento_4")) unlocked.push("fragmento_4");
+      if (stage.id === 12 && !unlocked.includes("revelacao")) unlocked.push("revelacao");
+
       const exclusive = enemy.boss ? rollBossExclusive(stage.id) : null;
       const drop = exclusive ?? rollDrop(stage.id, diff, !!enemy.boss);
       const worldBonus = isFinal && enemy.boss && !save.abyssCleared ? 1500 : 0;
@@ -861,11 +955,12 @@ function Battle({
         gold: save.gold + gold + worldBonus,
         potions: worldBonus ? potions + 5 : potions,
         stage: nextStage,
-        cleared: save.cleared || !!enemy.boss,
+        cleared: save.cleared || (stage.id === 12 && !!enemy.boss),
         abyssCleared: save.abyssCleared || (isFinal && !!enemy.boss),
         inventory: drop ? [...save.inventory, drop] : save.inventory,
         consecutiveLosses: 0,
         battleDeaths: 0,
+        unlockedChronicles: unlocked,
       });
       setResult({ win: true, xp: enemy.xp, gold: gold + worldBonus, up, drop });
     } else {
@@ -965,8 +1060,20 @@ function Battle({
 
     if (nehp <= 0) {
       push(`${enemy.name} foi derrotado!`);
-      setTimeout(() => finish(true), 500);
-      setBusy(false);
+
+      // Multi-phase transition: Stage 11 (Dragon) -> Stage 12 (Architect)
+      if (stage.id === 11) {
+        setTimeout(() => {
+          const finalBoss = scaleEnemy(pickEnemy(getStage(12)), diff);
+          setEnemy(finalBoss);
+          setEhp(finalBoss.hp);
+          setStory("O Dragão Roxo cai! A energia corrompida foi liberada e o Arquiteto se revela para o confronto final.");
+          push("FASE 2: O ARQUITETO APARECEU!");
+          setBusy(false);
+        }, 800);
+      } else {
+        setTimeout(() => finish(true), 500);
+      }
       return;
     }
     setTimeout(() => enemyTurn(hp), 650);
@@ -975,12 +1082,20 @@ function Battle({
   if (result) {
     return (
       <div className="flex min-h-[85vh] flex-col justify-center">
+        {story && <StoryDialog message={story} onClose={() => setStory(null)} />}
         <div className="panel p-6 text-center">
           <div className="text-6xl">{result.win ? "🏆" : "💀"}</div>
           <h2 className={`mt-2 text-3xl ${result.win ? "text-primary" : "text-destructive"}`}>
             {result.win ? "VITÓRIA!" : "DERROTA"}
           </h2>
-          {result.win ? (
+          {result.win && stage.id === 12 ? (
+            <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm font-bold text-primary mb-2">CAMPANHA CONCLUÍDA!</p>
+              <p className="text-xs text-muted-foreground leading-relaxed italic">
+                O Núcleo foi restaurado. Os fragmentos foram reunidos. Mas algo muito maior despertou... o Vazio nos observa.
+              </p>
+            </div>
+          ) : result.win ? (
             <p className="mt-2 text-sm font-bold text-muted-foreground">
               +{result.xp} XP • +{result.gold} 🪙
               {result.up && <span className="block text-xp">⬆️ SUBIU DE NÍVEL!</span>}
@@ -1002,10 +1117,15 @@ function Battle({
             </div>
           )}
           <button
-            onClick={onExit}
+            onClick={() => {
+              if (result.win && stage.id === 12) {
+                 setSave({ ...save, cleared: true, runsCompleted: save.runsCompleted + 1 });
+              }
+              onExit();
+            }}
             className="btn-block btn-block-press mt-5 w-full bg-primary text-primary-foreground"
           >
-            VOLTAR AO ACAMPAMENTO
+            {result.win && stage.id === 12 ? "FINALIZAR AVENTURA" : "VOLTAR AO ACAMPAMENTO"}
           </button>
         </div>
       </div>
