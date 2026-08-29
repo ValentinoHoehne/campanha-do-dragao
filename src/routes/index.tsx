@@ -155,19 +155,18 @@ function Game() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-6">
-      <GameMenu
-        hasSave={!!save}
-        onHome={() => setScreen("menu")}
+    <main className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-16">
+      <Navbar
+        save={save}
+        onMenuOpen={() => {}} // GameMenu uses its own state, let's refactor
         onReset={() => {
           try {
             localStorage.removeItem(SAVE_KEY);
-          } catch {
-            /* ignore */
-          }
+          } catch { /* ignore */ }
           setSave(null);
           setScreen("menu");
         }}
+        onHome={() => setScreen("menu")}
       />
       {screen === "menu" && (
         <Menu
@@ -212,14 +211,15 @@ function Game() {
   );
 }
 
-function GameMenu({
-  hasSave,
+function Navbar({
+  save,
   onHome,
   onReset,
 }: {
-  hasSave: boolean;
+  save: Save | null;
   onHome: () => void;
   onReset: () => void;
+  onMenuOpen: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -239,26 +239,36 @@ function GameMenu({
         await document.documentElement.requestFullscreen();
         setFull(true);
       }
-    } catch {
-      /* não suportado */
-    }
+    } catch { /* não suportado */ }
     close();
   }
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Abrir menu"
-        onClick={() => setOpen(true)}
-        className="btn-block btn-block-press fixed right-3 top-3 z-40 h-11 w-11 !p-0 bg-secondary text-secondary-foreground"
-      >
-        <span className="flex flex-col gap-[3px]">
-          <span className="block h-[3px] w-5 rounded bg-current" />
-          <span className="block h-[3px] w-5 rounded bg-current" />
-          <span className="block h-[3px] w-5 rounded bg-current" />
-        </span>
-      </button>
+      <nav className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-center bg-background/80 backdrop-blur-md border-b border-border/50">
+        <div className="flex w-full max-w-md items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            {save && (
+              <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border border-border/50">
+                <span className="text-xs font-black text-gold">🪙 {save.gold}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Abrir menu"
+            onClick={() => setOpen(true)}
+            className="btn-block btn-block-press h-9 w-9 !p-0 bg-secondary text-secondary-foreground"
+          >
+            <span className="flex flex-col gap-[3px] items-center">
+              <span className="block h-[2px] w-4 rounded bg-current" />
+              <span className="block h-[2px] w-4 rounded bg-current" />
+              <span className="block h-[2px] w-4 rounded bg-current" />
+            </span>
+          </button>
+        </div>
+      </nav>
 
       {open && (
         <div
@@ -309,7 +319,7 @@ function GameMenu({
               ) : (
                 <button
                   type="button"
-                  disabled={!hasSave}
+                  disabled={!save}
                   className="btn-block btn-block-press w-full bg-destructive text-destructive-foreground"
                   onClick={() => setConfirm(true)}
                 >
@@ -330,7 +340,6 @@ function GameMenu({
     </>
   );
 }
-
 
 function Title() {
   return (
@@ -471,7 +480,6 @@ function StatusBar({ save }: { save: Save }) {
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg leading-none text-foreground">{save.name}</h2>
-            <span className="text-xs font-black text-gold">🪙 {save.gold}</span>
           </div>
           <p className="text-[11px] font-bold text-muted-foreground">
             {cls.name} • Nível {save.level}
