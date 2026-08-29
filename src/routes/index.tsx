@@ -18,6 +18,8 @@ import {
   sellPrice,
   heroAtk,
   heroDef,
+  heroSAtk,
+  heroSDef,
   heroCrit,
   loadSave,
   maxHp,
@@ -25,6 +27,8 @@ import {
   persist,
   SAVE_KEY,
   xpToNext,
+  enemySAtk,
+  enemySDef,
   type ClassId,
   type Difficulty,
   type Enemy,
@@ -128,6 +132,10 @@ function Game() {
           onShop={() => setScreen("shop")}
           onGear={() => setScreen("gear")}
           onMenu={() => setScreen("menu")}
+          onRecovery={() => {
+            const newStage = Math.max(1, save.stage - 1);
+            setSave({ ...save, stage: newStage, consecutiveLosses: 0 });
+          }}
         />
       )}
       {screen === "shop" && save && (
@@ -424,6 +432,7 @@ function Hub({
   onShop,
   onGear,
   onMenu,
+  onRecovery,
 }: {
   save: Save;
   setSave: (s: Save) => void;
@@ -431,12 +440,28 @@ function Hub({
   onShop: () => void;
   onGear: () => void;
   onMenu: () => void;
+  onRecovery: () => void;
 }) {
   const stage = getStage(save.stage);
   const diff = getDifficulty(save.difficulty);
   return (
     <div>
       <StatusBar save={save} />
+
+      {save.consecutiveLosses >= 3 && save.stage > 1 && (
+        <div className="panel mb-4 border-accent p-3 text-center bg-accent/10">
+          <h3 className="text-lg text-accent">Dificuldade Detectada ⚠️</h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Você perdeu {save.consecutiveLosses} vezes seguidas. Quer voltar um nível para treinar?
+          </p>
+          <button
+            onClick={onRecovery}
+            className="btn-block btn-block-press w-full bg-accent text-accent-foreground text-xs py-2"
+          >
+            VOLTAR UM ESTÁGIO
+          </button>
+        </div>
+      )}
 
       {save.cleared && (
         <div className="panel mb-4 border-primary p-3 text-center">
@@ -573,7 +598,7 @@ function Shop({
           <span className="text-3xl">🧪</span>
           <div className="flex-1">
             <h3 className="text-base text-foreground">Poção de Vida</h3>
-            <p className="text-[11px] text-muted-foreground">Cura 45% da vida em combate.</p>
+            <p className="text-[11px] text-muted-foreground">Cura 40% da vida máxima em combate.</p>
           </div>
           <button
             disabled={save.gold < potionCost}
@@ -839,16 +864,35 @@ function Battle({
         cleared: save.cleared || !!enemy.boss,
         abyssCleared: save.abyssCleared || (isFinal && !!enemy.boss),
         inventory: drop ? [...save.inventory, drop] : save.inventory,
+        consecutiveLosses: 0,
+        battleDeaths: 0,
       });
       setResult({ win: true, xp: enemy.xp, gold: gold + worldBonus, up, drop });
     } else {
-      setSave({ ...save, gold: Math.max(0, save.gold - 10), potions });
-      setResult({ win: false, xp: 0, gold: 0, up: false, drop: null });
+      // Tiered money loss: 1st (10), 2nd (5), 3rd (2), 4th+ (0)
+      const currentDeaths = save.lastBattleStageId === stage.id ? save.battleDeaths + 1 : 1;
+      let lostGold = 10;
+      if (currentDeaths === 2) lostGold = 5;
+      else if (currentDeaths === 3) lostGold = 2;
+      else if (currentDeaths >= 4) lostGold = 0;
+
+      setSave({
+        ...save,
+        gold: Math.max(0, save.gold - lostGold),
+        potions,
+        consecutiveLosses: save.consecutiveLosses + 1,
+        battleDeaths: currentDeaths,
+        lastBattleStageId: stage.id,
+      });
+      setResult({ win: false, xp: 0, gold: lostGold, up: false, drop: null });
     }
   }
 
   function enemyTurn(currentHp: number) {
-    const dmg = damage(enemy.atk, heroDef(save));
+    const eAtk = enemy.attackType === "especial" ? enemySAtk(enemy) : enemy.atk;
+    const hDef = enemy.attackType === "especial" ? heroSDef(save) : heroDef(save);
+
+    const dmg = damage(eAtk, hDef);
     const nhp = Math.max(0, currentHp - dmg);
     setHitHero(true);
     setTimeout(() => setHitHero(false), 320);
@@ -867,7 +911,10 @@ function Battle({
     let dealt = 0;
 
     if (kind === "attack") {
-      dealt = damage(heroAtk(save), enemy.def);
+      const hAtk = cls.attackType === "especial" ? heroSAtk(save) : heroAtk(save);
+      const eDef = cls.attackType === "especial" ? enemySDef(enemy) : enemy.def;
+
+      dealt = damage(hAtk, eDef);
       const crit = Math.random() * 100 < heroCrit(save);
       if (crit) dealt = Math.round(dealt * 1.8);
       push(
@@ -877,13 +924,15 @@ function Battle({
       );
       setEnergy((e) => Math.min(6, e + 1));
     } else if (kind === "skill") {
+      const hAtk = cls.skillType === "especial" ? heroSAtk(save) : heroAtk(save);
+      const eDef = cls.skillType === "especial" ? 0 : enemy.def * 0.5; // Mage/Hybrid ignore def
+
       const mult = save.classId === "mago" ? 2.4 : save.classId === "ladino" ? 2.2 : 2;
-      const def = save.classId === "mago" ? 0 : enemy.def * 0.5;
-      dealt = damage(heroAtk(save) * mult, def, 0.08);
+      dealt = damage(hAtk * mult, eDef, 0.08);
       push(`⚡ ${cls.skillName}! ${dealt} de dano!`);
       setEnergy((e) => e - cls.skillCost);
     } else if (kind === "potion") {
-      const heal = Math.round(hpMax * 0.45);
+      const heal = Math.round(hpMax * 0.40);
       setHp((h) => Math.min(hpMax, h + heal));
       setPotions((p) => p - 1);
       push(`🧪 Poção usada: +${heal} de vida.`);
@@ -893,7 +942,11 @@ function Battle({
     } else {
       setEnergy((e) => Math.min(6, e + 2));
       push(`🛡️ ${save.name} se defende e recupera energia.`);
-      const dmg = Math.max(1, Math.round(damage(enemy.atk, heroDef(save)) * 0.4));
+
+      const eAtk = enemy.attackType === "especial" ? enemySAtk(enemy) : enemy.atk;
+      const hDef = enemy.attackType === "especial" ? heroSDef(save) : heroDef(save);
+
+      const dmg = Math.max(1, Math.round(damage(eAtk, hDef) * 0.4));
       const nhp = Math.max(0, hp - dmg);
       setHp(nhp);
       setTimeout(() => {
@@ -934,7 +987,7 @@ function Battle({
             </p>
           ) : (
             <p className="mt-2 text-sm font-bold text-muted-foreground">
-              Você perdeu 10 🪙. Compre upgrades e tente de novo!
+              Você perdeu {result.gold} 🪙. {result.gold > 0 ? "Compre upgrades e tente de novo!" : "Desta vez você não perdeu ouro."}
             </p>
           )}
           {result.drop && (

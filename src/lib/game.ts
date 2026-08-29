@@ -25,8 +25,8 @@ export const CLASSES: HeroClass[] = [
     name: "Guerreiro",
     emoji: "🛡️",
     desc: "Tanque bruto. Muita vida, aguenta pancada.",
-    hp: 120,
-    atk: 14,
+    hp: 115,
+    atk: 13,
     def: 8,
     satk: 4,
     sdef: 5,
@@ -42,7 +42,7 @@ export const CLASSES: HeroClass[] = [
     emoji: "🔮",
     desc: "Dano mágico alto, mas frágil.",
     hp: 85,
-    atk: 8,
+    atk: 12,
     def: 3,
     satk: 22,
     sdef: 11,
@@ -281,7 +281,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     desc: "Inimigos fracos. Bom pra treinar.",
     enemyMult: 0.75,
     rewardMult: 0.8,
-    dropChance: 0.35,
+    dropChance: 0.45,
     rarityBonus: 0,
   },
   {
@@ -291,7 +291,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     desc: "Equilibrado. Drops decentes.",
     enemyMult: 1,
     rewardMult: 1,
-    dropChance: 0.5,
+    dropChance: 0.6,
     rarityBonus: 0.12,
   },
   {
@@ -301,7 +301,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     desc: "Inimigos brutais, mas os melhores itens.",
     enemyMult: 1.45,
     rewardMult: 1.7,
-    dropChance: 0.72,
+    dropChance: 0.85,
     rarityBonus: 0.3,
   },
 ];
@@ -530,6 +530,9 @@ export interface Save {
   difficulty: Difficulty;
   inventory: Item[];
   equipped: Partial<Record<Slot, Item>>;
+  consecutiveLosses: number;
+  battleDeaths: number;
+  lastBattleStageId: number;
 }
 
 export const SAVE_KEY = "rpg-campanha-save-v1";
@@ -561,6 +564,16 @@ export function heroDef(save: Save) {
   return base.def + (save.level - 1) * 1.5 + save.bonusDef + gearSum(save, "def");
 }
 
+export function heroSAtk(save: Save) {
+  const base = CLASSES.find((c) => c.id === save.classId)!;
+  return base.satk + (save.level - 1) * 3 + gearSum(save, "satk");
+}
+
+export function heroSDef(save: Save) {
+  const base = CLASSES.find((c) => c.id === save.classId)!;
+  return base.sdef + (save.level - 1) * 1.5 + gearSum(save, "sdef");
+}
+
 export function heroCrit(save: Save) {
   const base = save.classId === "ladino" ? 15 : 5;
   return Math.min(75, base + gearSum(save, "crit"));
@@ -583,6 +596,9 @@ export function newSave(classId: ClassId, name: string): Save {
     difficulty: "medio",
     inventory: [],
     equipped: {},
+    consecutiveLosses: 0,
+    battleDeaths: 0,
+    lastBattleStageId: 0,
   };
 }
 
@@ -593,6 +609,9 @@ export function migrate(s: Save): Save {
     abyssCleared: s.abyssCleared ?? false,
     inventory: Array.isArray(s.inventory) ? s.inventory : [],
     equipped: s.equipped ?? {},
+    consecutiveLosses: s.consecutiveLosses ?? 0,
+    battleDeaths: s.battleDeaths ?? 0,
+    lastBattleStageId: s.lastBattleStageId ?? 0,
   };
 }
 
