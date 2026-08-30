@@ -18,6 +18,9 @@ export interface HeroClass {
   skillName: string;
   skillDesc: string;
   skillCost: number;
+  spriteRow?: number;
+  spriteCol?: number;
+  spriteSheet?: "blue" | "red";
 }
 
 export const CLASSES: HeroClass[] = [
@@ -25,8 +28,8 @@ export const CLASSES: HeroClass[] = [
     id: "guerreiro",
     name: "Guerreiro",
     emoji: "🛡️",
-    desc: "Tanque bruto. Muita vida, aguenta pancada.",
-    lore: "Defensor nato dos Reinos de Eldra, o Guerreiro representa a força física bruta e a proteção inabalável dos ideais humanos.",
+    desc: "Tanque bruto das Sentinelas do Núcleo Azul.",
+    lore: "Elite defensiva das Sentinelas do Núcleo Azul, treinado para ser a barreira intransponível contra a corrupção vermelha.",
     hp: 115,
     atk: 13,
     def: 8,
@@ -37,13 +40,16 @@ export const CLASSES: HeroClass[] = [
     skillName: "Golpe Brutal",
     skillDesc: "Dano pesado (x2) ignorando metade da defesa.",
     skillCost: 3,
+    spriteRow: 0,
+    spriteCol: 2,
+    spriteSheet: "blue",
   },
   {
     id: "mago",
     name: "Mago",
     emoji: "🔮",
-    desc: "Dano mágico alto, mas frágil.",
-    lore: "Um estudioso das energias arcanas que busca compreender a instabilidade elemental deixada pela destruição do Núcleo.",
+    desc: "Canalizador das energias puras do Núcleo Azul.",
+    lore: "Um mestre das energias azuis, capaz de purificar a instabilidade elemental deixada pela Ordem Vermelha.",
     hp: 85,
     atk: 12,
     def: 3,
@@ -54,13 +60,16 @@ export const CLASSES: HeroClass[] = [
     skillName: "Bola de Fogo",
     skillDesc: "Explosão mágica (x2.4) que ignora a defesa.",
     skillCost: 4,
+    spriteRow: 1,
+    spriteCol: 2,
+    spriteSheet: "blue",
   },
   {
     id: "ladino",
-    name: "Ladino",
+    name: "Bandido",
     emoji: "🗡️",
-    desc: "Rápido e crítico. Rouba ouro extra.",
-    lore: "Mestre da técnica e precisão, o Ladino prefere a sutileza da lâmina e o oportunismo das sombras para sobreviver.",
+    desc: "Ex-membro da Ordem Vermelha, agora leal ao Azul.",
+    lore: "Após desertar da Legião de Sangue, ele usa seu conhecimento das sombras para sabotar os planos dos antigos aliados.",
     hp: 95,
     atk: 17,
     def: 5,
@@ -71,13 +80,16 @@ export const CLASSES: HeroClass[] = [
     skillName: "Ataque Furtivo",
     skillDesc: "Acerto crítico garantido (x2.2) e +ouro.",
     skillCost: 3,
+    spriteRow: 2,
+    spriteCol: 2,
+    spriteSheet: "blue",
   },
   {
     id: "arqueiro",
     name: "Arqueiro",
     emoji: "🏹",
-    desc: "Atirador de flechas de luz. Físico, preciso e letal à distância.",
-    lore: "Seus arcos disparam flechas de luz pura, criadas a partir de energia condensada do Núcleo, tornando-o parte intrínseca do mundo.",
+    desc: "Atirador de precisão das Sentinelas.",
+    lore: "Seus arcos disparam flechas de luz azul pura, criadas a partir de energia condensada do Núcleo, tornando-o letal à distância.",
     hp: 92,
     atk: 20,
     def: 6,
@@ -88,13 +100,16 @@ export const CLASSES: HeroClass[] = [
     skillName: "Chuva de Luz",
     skillDesc: "Rajada de flechas luminosas (x2.1 físico) ignorando metade da defesa.",
     skillCost: 3,
+    spriteRow: 3,
+    spriteCol: 2,
+    spriteSheet: "blue",
   },
   {
     id: "hibrido",
-    name: "Híbrido",
+    name: "Guerreiro Híbrido",
     emoji: "🐲",
-    desc: "Cospe fogo. Dano especial alto com resistência mágica.",
-    lore: "Após absorver fragmentos do Núcleo em seu próprio corpo, o Híbrido libera chamas instáveis e poder elemental incontrolável.",
+    desc: "Guerreiro que domina o equilíbrio do Núcleo.",
+    lore: "Um defensor que absorveu a essência equilibrada do Núcleo Azul, liberando chamas purificadoras contra o Vazio.",
     hp: 102,
     atk: 12,
     def: 6,
@@ -105,6 +120,9 @@ export const CLASSES: HeroClass[] = [
     skillName: "Sopro Flamejante",
     skillDesc: "Jato de fogo (x2.3 especial) que ignora a defesa especial.",
     skillCost: 4,
+    spriteRow: 4,
+    spriteCol: 2,
+    spriteSheet: "blue",
   },
 ];
 
@@ -120,6 +138,9 @@ export interface Enemy {
   xp: number;
   gold: number;
   boss?: boolean;
+  spriteRow?: number;
+  spriteCol?: number;
+  spriteSheet?: "blue" | "red";
 }
 
 export interface Stage {
@@ -140,39 +161,41 @@ export const WORLD_5 = "Mundo V — O Coração Partido";
 export const STAGES: Stage[] = [
   {
     id: 1,
-    name: "Vila em Ruínas",
+    name: "Fronteira Ocupada",
     zone: "Terras Devastadas",
     world: WORLD_1,
     enemies: [
-      { name: "Slime Azul", emoji: "🟦", hp: 40, atk: 8, def: 2, xp: 20, gold: 12 },
-      { name: "Rato Gigante", emoji: "🐀", hp: 52, atk: 10, def: 3, xp: 26, gold: 16 },
+      { name: "Recruta Vermelho", emoji: "👤", hp: 40, atk: 8, def: 2, xp: 20, gold: 12, spriteRow: 0, spriteCol: 0 },
+      { name: "Soldado da Ordem Vermelha", emoji: "👤", hp: 52, atk: 10, def: 3, xp: 26, gold: 16, spriteRow: 1, spriteCol: 0 },
     ],
   },
   {
     id: 2,
-    name: "Floresta Corrompida",
+    name: "Vila Sitiada",
     zone: "Terras Devastadas",
     world: WORLD_1,
     enemies: [
-      { name: "Lobo Faminto", emoji: "🐺", hp: 70, atk: 14, def: 4, xp: 40, gold: 24 },
-      { name: "Aranha Venenosa", emoji: "🕷️", hp: 80, atk: 16, def: 5, xp: 48, gold: 30 },
+      { name: "Batedor Vermelho", emoji: "👤", hp: 70, atk: 14, def: 4, xp: 40, gold: 24, spriteRow: 2, spriteCol: 0 },
+      { name: "Assassino Vermelho", emoji: "👤", hp: 80, atk: 16, def: 5, xp: 48, gold: 30, spriteRow: 3, spriteCol: 0 },
     ],
   },
   {
     id: 3,
-    name: "Mina de Cristais",
+    name: "Acampamento da Ruína",
     zone: "Terras Devastadas",
     world: WORLD_1,
     enemies: [
       {
-        name: "GUARDIÃO DA RUÍNA",
-        emoji: "🗿",
+        name: "COMANDANTE DA RUÍNA",
+        emoji: "👤",
         hp: 200,
         atk: 24,
         def: 12,
         xp: 150,
         gold: 100,
         boss: true,
+        spriteRow: 0,
+        spriteCol: 4,
       },
     ],
     postBossMessage: "Um fragmento despertou. Faltam quatro.",
@@ -183,54 +206,57 @@ export const STAGES: Stage[] = [
     zone: "Reino das Cinzas",
     world: WORLD_2,
     enemies: [
-      { name: "Imp Flamejante", emoji: "🔥", hp: 160, atk: 28, def: 10, xp: 120, gold: 85 },
-      { name: "Esqueleto Carbonizado", emoji: "💀", hp: 180, atk: 32, def: 12, xp: 140, gold: 95 },
+      { name: "Piromante Vermelho", emoji: "👤", hp: 160, atk: 28, def: 10, xp: 120, gold: 85, spriteRow: 1, spriteCol: 4 },
+      { name: "Cruzado Carbonizado", emoji: "👤", hp: 180, atk: 32, def: 12, xp: 140, gold: 95, spriteRow: 2, spriteCol: 4 },
     ],
   },
   {
     id: 5,
-    name: "Fortaleza Vulcânica",
+    name: "Palácio de Fogo",
     zone: "Reino das Cinzas",
     world: WORLD_2,
     enemies: [
       {
-        name: "SENHOR DAS CINZAS",
-        emoji: "🔥",
+        name: "LORDE DAS CINZAS",
+        emoji: "👤",
         hp: 380,
         atk: 42,
         def: 18,
         xp: 400,
         gold: 300,
         boss: true,
+        spriteRow: 3, spriteCol: 4,
       },
     ],
     postBossMessage: "Você continua reunindo os fragmentos... exatamente como ele planejou.",
   },
   {
     id: 6,
-    name: "Torres Flutuantes",
+    name: "Cidadela Arcaica",
     zone: "Abismo Arcano",
     world: WORLD_3,
     enemies: [
-      { name: "Olho Arcano", emoji: "👁️", hp: 280, atk: 48, def: 20, xp: 280, gold: 180 },
-      { name: "Elemental Instável", emoji: "🌀", hp: 300, atk: 54, def: 22, xp: 300, gold: 200 },
+      { name: "Mago do Abismo Vermelho", emoji: "👤", hp: 280, atk: 48, def: 20, xp: 280, gold: 180, spriteRow: 4, spriteCol: 0 },
+      { name: "Inquisidor Arcano", emoji: "👤", hp: 300, atk: 54, def: 22, xp: 300, gold: 200, spriteRow: 4, spriteCol: 1 },
     ],
   },
   {
     id: 7,
-    name: "Biblioteca Proibida",
+    name: "Torre do Selo",
     zone: "Abismo Arcano",
     world: WORLD_3,
     enemies: [
       {
-        name: "ARQUIMAGO CORROMPIDO",
-        emoji: "🧙",
+        name: "ARQUIMAGO RENEGADO",
+        emoji: "👤",
         hp: 600,
         atk: 68,
         def: 26,
         xp: 700,
         gold: 500,
         boss: true,
+        spriteRow: 4,
+        spriteCol: 4,
       },
     ],
     postBossMessage: "O Núcleo não era apenas uma fonte de energia. Era também um selo.",
@@ -241,25 +267,25 @@ export const STAGES: Stage[] = [
     zone: "Reino Celestial",
     world: WORLD_4,
     enemies: [
-      { name: "Anjo Caído", emoji: "👼", hp: 450, atk: 78, def: 32, xp: 550, gold: 350 },
-      { name: "Gárgula de Ouro", emoji: "🛡️", hp: 500, atk: 82, def: 40, xp: 600, gold: 380 },
+      { name: "Paladino Corrompido", emoji: "👤", hp: 450, atk: 78, def: 32, xp: 550, gold: 350, spriteRow: 0, spriteCol: 3 },
+      { name: "Guardião da Ordem Vermelha", emoji: "👤", hp: 500, atk: 82, def: 40, xp: 600, gold: 380, spriteRow: 1, spriteCol: 3 },
     ],
   },
   {
     id: 9,
-    name: "Pico das Nuvens",
+    name: "Portões do Éter",
     zone: "Reino Celestial",
     world: WORLD_4,
     enemies: [
       {
-        name: "SENTINELA CELESTIAL",
-        emoji: "⚔️",
+        name: "GENERAL DO VAZIO",
+        emoji: "👤",
         hp: 850,
         atk: 96,
         def: 45,
-        xp: 1200,
-        gold: 800,
+        xp: 1200, gold: 800,
         boss: true,
+        spriteRow: 2, spriteCol: 3,
       },
     ],
     postBossMessage: "A energia celestial está diretamente ligada ao Núcleo. O Arquiteto aguarda.",
@@ -270,8 +296,8 @@ export const STAGES: Stage[] = [
     zone: "O Coração Partido",
     world: WORLD_5,
     enemies: [
-      { name: "Sombra Devoradora", emoji: "🌑", hp: 600, atk: 105, def: 42, xp: 900, gold: 600 },
-      { name: "Arauto da Noite", emoji: "🌌", hp: 650, atk: 112, def: 46, xp: 950, gold: 650 },
+      { name: "Arauto do Colapso Vermelho", emoji: "👤", hp: 600, atk: 105, def: 42, xp: 900, gold: 600, spriteRow: 5, spriteCol: 0 },
+      { name: "Executor da Ordem", emoji: "👤", hp: 650, atk: 112, def: 46, xp: 950, gold: 650, spriteRow: 5, spriteCol: 1 },
     ],
   },
   {
@@ -281,14 +307,17 @@ export const STAGES: Stage[] = [
     world: WORLD_5,
     enemies: [
       {
-        name: "DRAGÃO ROXO MASSIÇO",
-        emoji: "🐉",
+        name: "O CAMPEÃO DO NÚCLEO VERMELHO",
+        emoji: "👤",
         hp: 1200,
         atk: 135,
         def: 60,
         xp: 2500,
         gold: 1500,
         boss: true,
+        spriteRow: 0,
+        spriteCol: 5,
+        spriteSheet: "red",
       },
     ],
     postBossMessage: "A energia corrompida foi liberada. O Arquiteto se revela.",
@@ -301,13 +330,14 @@ export const STAGES: Stage[] = [
     enemies: [
       {
         name: "O ARQUITETO",
-        emoji: "👑",
+        emoji: "👤",
         hp: 1800,
         atk: 160,
         def: 75,
         xp: 5000,
         gold: 3000,
         boss: true,
+        spriteRow: 3, spriteCol: 5,
       },
     ],
     postBossMessage: "O Núcleo foi restaurado. Mas o que despertou não deveria existir...",
@@ -420,6 +450,9 @@ export interface Item {
   sdef?: number; // defesa especial
   hp: number;
   crit: number; // % de chance de crítico
+  spriteRow?: number;
+  spriteCol?: number;
+  spriteSheet?: "blue" | "red";
 }
 
 export const RARITIES: { id: Rarity; name: string; color: string; mult: number; weight: number }[] = [
@@ -435,7 +468,7 @@ export function rarityDef(r: Rarity) {
 
 const SLOT_BASES: Record<
   Slot,
-  { names: string[]; emojis: string[]; atk: number; def: number; satk: number; sdef: number; hp: number; crit: number }
+  { names: string[]; emojis: string[]; atk: number; def: number; satk: number; sdef: number; hp: number; crit: number; spriteCol: number }
 > = {
   arma: {
     names: ["Lâmina", "Machado", "Cajado", "Adaga", "Martelo", "Arco"],
@@ -446,6 +479,7 @@ const SLOT_BASES: Record<
     sdef: 0,
     hp: 0,
     crit: 3,
+    spriteCol: 0,
   },
   armadura: {
     names: ["Peitoral", "Manto", "Cota", "Couraça"],
@@ -456,16 +490,18 @@ const SLOT_BASES: Record<
     sdef: 3,
     hp: 14,
     crit: 0,
+    spriteCol: 1,
   },
   acessorio: {
-    names: ["Anel", "Amuleto", "Talismã", "Elmo"],
-    emojis: ["💍", "📿", "🔮", "⛑️"],
+    names: ["Botas", "Botinas", "Grevilhas", "Sandálias"],
+    emojis: ["👢", "👞", "👟", "🥾"],
     atk: 2,
     def: 1,
     satk: 2,
     sdef: 1,
     hp: 8,
     crit: 4,
+    spriteCol: 2,
   },
 };
 
@@ -513,6 +549,8 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
     sdef: Math.round(base.sdef * scale * jitter() * (focus === "especial" ? 1.2 : 0.6)),
     hp: Math.round(base.hp * scale * jitter()),
     crit: Math.round(base.crit * rd.mult * jitter()),
+    spriteRow: 0,
+    spriteCol: base.spriteCol,
   };
 }
 
@@ -528,6 +566,8 @@ const ABYSS_BOSS_ITEMS: Omit<Item, "uid">[] = [
     def: 0,
     hp: 0,
     crit: 22,
+    spriteRow: 0,
+    spriteCol: 0,
   },
   {
     name: "Couraça do Vazio",
@@ -538,16 +578,20 @@ const ABYSS_BOSS_ITEMS: Omit<Item, "uid">[] = [
     def: 48,
     hp: 180,
     crit: 0,
+    spriteRow: 0,
+    spriteCol: 1,
   },
   {
-    name: "Olho do Abismo",
-    emoji: "👁️",
+    name: "Pegadas do Abismo",
+    emoji: "👣",
     slot: "acessorio",
     rarity: "lendario",
     atk: 24,
     def: 14,
     hp: 90,
     crit: 30,
+    spriteRow: 0,
+    spriteCol: 2,
   },
 ];
 
@@ -562,6 +606,8 @@ export function rollBossExclusive(stageId: number): Item | null {
     def: Math.round(base.def * jitter()),
     hp: Math.round(base.hp * jitter()),
     crit: Math.round(base.crit * jitter()),
+    spriteRow: 0,
+    spriteCol: base.spriteCol,
   };
 }
 
@@ -587,6 +633,7 @@ export interface Save {
   bonusAtk: number;
   bonusDef: number;
   bonusHp: number;
+  statPoints: number;
   cleared: boolean;
   abyssCleared?: boolean;
 
@@ -656,6 +703,7 @@ export function newSave(classId: ClassId, name: string): Save {
     bonusAtk: 0,
     bonusDef: 0,
     bonusHp: 0,
+    statPoints: 0,
     cleared: false,
     abyssCleared: false,
     difficulty: "medio",
@@ -672,6 +720,7 @@ export function newSave(classId: ClassId, name: string): Save {
 export function migrate(s: Save): Save {
   return {
     ...s,
+    statPoints: s.statPoints ?? 0,
     difficulty: s.difficulty ?? "medio",
     abyssCleared: s.abyssCleared ?? false,
     inventory: Array.isArray(s.inventory) ? s.inventory : [],
@@ -735,7 +784,7 @@ export const CHRONICLES: ChronicleEntry[] = [
   {
     id: "fragmento_3",
     title: "Fragmento III: O Selo",
-    desc: "Registros antigos no Abismo Arcano revelam que o Núcleo não era apenas energia; era uma prisão para algo terrível.",
+    desc: "Registros antigos no Abismo Arcano revelem que o Núcleo não era apenas energia; era uma prisão para algo terrível.",
   },
   {
     id: "fragmento_4",

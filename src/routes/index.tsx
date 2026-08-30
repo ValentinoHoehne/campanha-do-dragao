@@ -72,6 +72,56 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
   );
 }
 
+function Sprite({
+  sheet,
+  row = 0,
+  col = 0,
+  size = 32,
+  scale = 1,
+  className = ""
+}: {
+  sheet: "blue" | "red" | "items" | "dragon";
+  row?: number;
+  col?: number;
+  size?: number;
+  scale?: number;
+  className?: string;
+}) {
+  if (sheet === "dragon") return null;
+
+  const isItems = sheet === "items";
+  const imageUrl =
+    sheet === "blue"
+      ? "/units_blue.png"
+      : sheet === "red"
+        ? "/units_red.png"
+        : isItems
+          ? "/16x16%20RPG%20Item%20Pack/Sheet.png"
+          : "/images.png";
+
+  const baseSize = isItems ? 16 : 32;
+  const displayScale = isItems ? scale * 2 : scale;
+
+  // Layout: units são 6x7 (32px), items são 8x9 (16px)
+  const cols = isItems ? 8 : 6;
+  const rows = isItems ? 9 : 7;
+
+  return (
+    <div
+      className={`inline-block shrink-0 ${className}`}
+      style={{
+        width: `${baseSize * displayScale}px`,
+        height: `${baseSize * displayScale}px`,
+        backgroundImage: `url("${imageUrl}")`,
+        backgroundSize: `${cols * baseSize * displayScale}px ${rows * baseSize * displayScale}px`,
+        backgroundPosition: `-${col * baseSize * displayScale}px -${row * baseSize * displayScale}px`,
+        backgroundRepeat: "no-repeat",
+        imageRendering: "pixelated",
+      }}
+    />
+  );
+}
+
 function StoryDialog({
   message,
   onClose,
@@ -202,7 +252,7 @@ function Game() {
         <Shop save={save} setSave={setSave} onBack={() => setScreen("hub")} />
       )}
       {screen === "gear" && save && (
-        <Gear save={save} setSave={setSave} onBack={() => setScreen("hub")} />
+        <Inventory save={save} setSave={setSave} onBack={() => setScreen("hub")} />
       )}
       {screen === "battle" && save && (
         <Battle save={save} setSave={setSave} onExit={() => setScreen("hub")} />
@@ -366,7 +416,6 @@ function Menu({
 }) {
   return (
     <div className="flex min-h-[80vh] flex-col justify-center">
-      <div className="mb-6 text-center text-7xl anim-idle">🐉</div>
       <Title />
       <div className="panel space-y-3 p-4">
         {save ? (
@@ -431,7 +480,7 @@ function Create({
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{c.emoji}</span>
+                <Sprite sheet={c.spriteSheet || "blue"} row={c.spriteRow} col={c.spriteCol} scale={1.5} />
                 <div className="flex-1">
                   <h3 className="text-xl text-foreground">{c.name}</h3>
                   <p className="text-xs text-muted-foreground">{c.desc}</p>
@@ -476,7 +525,7 @@ function StatusBar({ save }: { save: Save }) {
   return (
     <div className="panel mb-4 p-3">
       <div className="flex items-center gap-3">
-        <span className="text-3xl">{cls.emoji}</span>
+        <Sprite sheet={cls.spriteSheet || "blue"} row={cls.spriteRow} col={cls.spriteCol} scale={1.2} />
         <div className="flex-1">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg leading-none text-foreground">{save.name}</h2>
@@ -491,6 +540,7 @@ function StatusBar({ save }: { save: Save }) {
         <p className="mt-1 text-[10px] font-bold text-muted-foreground">
           XP {save.xp}/{xpToNext(save.level)} • ❤️ {maxHp(save)} • ⚔️ {heroAtk(save)} • 🛡️{" "}
           {Math.round(heroDef(save))} • 🎯 {heroCrit(save)}% • 🧪 {save.potions}
+          {save.statPoints > 0 && <span className="text-accent ml-2">✨ {save.statPoints} PONTOS</span>}
         </p>
       </div>
     </div>
@@ -585,9 +635,9 @@ function Hub({
         </p>
         <h2 className="text-2xl text-foreground">{stage.name}</h2>
         <p className="text-xs text-muted-foreground">{stage.zone}</p>
-        <div className="mt-3 flex gap-2 text-3xl">
-          {stage.enemies.map((e) => (
-            <span key={e.name}>{e.emoji}</span>
+        <div className="mt-3 flex gap-2">
+          {stage.enemies.map((e, idx) => (
+            <Sprite key={`${e.name}-${idx}`} sheet={e.spriteSheet || "red"} row={e.spriteRow} col={e.spriteCol} />
           ))}
         </div>
         <button
@@ -609,7 +659,7 @@ function Hub({
           onClick={onGear}
           className="btn-block btn-block-press bg-xp px-1 text-[10px] text-primary-foreground"
         >
-          🎒 BUILD
+          🎒 ITENS
         </button>
         <button
           onClick={() => setShowChronicles(true)}
@@ -658,11 +708,6 @@ function Hub({
   );
 }
 
-const UPGRADES = [
-  { key: "bonusAtk" as const, label: "Espada Afiada", emoji: "⚔️", desc: "+4 de Ataque", cost: 60, amount: 4 },
-  { key: "bonusDef" as const, label: "Armadura Reforçada", emoji: "🛡️", desc: "+3 de Defesa", cost: 55, amount: 3 },
-  { key: "bonusHp" as const, label: "Coração de Ferro", emoji: "❤️", desc: "+25 de Vida máx.", cost: 70, amount: 25 },
-];
 
 function Shop({
   save,
@@ -674,6 +719,16 @@ function Shop({
   onBack: () => void;
 }) {
   const potionCost = 25;
+  const sorted = [...save.inventory].sort((a, b) => itemPower(b) - itemPower(a));
+
+  function sell(item: Item) {
+    setSave({
+      ...save,
+      gold: save.gold + sellPrice(item),
+      inventory: save.inventory.filter((i) => i.uid !== item.uid),
+    });
+  }
+
   return (
     <div>
       <StatusBar save={save} />
@@ -696,31 +751,29 @@ function Shop({
             {potionCost}🪙
           </button>
         </div>
+      </div>
 
-        {UPGRADES.map((u) => {
-          const owned = Math.round(save[u.key] / u.amount);
-          const cost = Math.round(u.cost * Math.pow(1.6, owned));
-          return (
-            <div key={u.key} className="panel flex items-center gap-3 p-3">
-              <span className="text-3xl">{u.emoji}</span>
-              <div className="flex-1">
-                <h3 className="text-base text-foreground">
-                  {u.label} <span className="text-xs text-accent">Nv. {owned}</span>
-                </h3>
-                <p className="text-[11px] text-muted-foreground">{u.desc}</p>
-              </div>
+      <h3 className="mt-6 mb-2 text-base text-foreground">Venda seus itens</h3>
+      <div className="space-y-2">
+        {sorted.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            Mochila vazia.
+          </p>
+        )}
+        {sorted.map((item) => (
+          <ItemCard
+            key={item.uid}
+            item={item}
+            action={
               <button
-                disabled={save.gold < cost}
-                onClick={() =>
-                  setSave({ ...save, gold: save.gold - cost, [u.key]: save[u.key] + u.amount })
-                }
-                className="btn-block btn-block-press bg-gold px-3 py-2 text-xs text-primary-foreground"
+                onClick={() => sell(item)}
+                className="btn-block btn-block-press bg-gold px-2 py-1 text-[10px] text-primary-foreground"
               >
-                {cost}🪙
+                VENDER ({sellPrice(item)}🪙)
               </button>
-            </div>
-          );
-        })}
+            }
+          />
+        ))}
       </div>
 
       <button
@@ -736,7 +789,7 @@ function Shop({
 const SLOT_LABEL: Record<Slot, string> = {
   arma: "Arma",
   armadura: "Armadura",
-  acessorio: "Acessório",
+  acessorio: "Bota",
 };
 
 function ItemStats({ item }: { item: Item }) {
@@ -762,7 +815,7 @@ function ItemCard({
   const rd = rarityDef(item.rarity);
   return (
     <div className="panel flex items-center gap-2 p-2">
-      <span className="text-2xl">{item.emoji}</span>
+      <Sprite sheet={item.spriteSheet || "items"} row={item.spriteRow} col={item.spriteCol} scale={0.8} />
       <div className="min-w-0 flex-1">
         <h4 className="truncate text-sm text-foreground">{item.name}</h4>
         <p className={`text-[10px] font-black uppercase ${rd.color}`}>
@@ -775,7 +828,7 @@ function ItemCard({
   );
 }
 
-function Gear({
+function Inventory({
   save,
   setSave,
   onBack,
@@ -809,12 +862,73 @@ function Gear({
     });
   }
 
+  function addStat(key: "bonusAtk" | "bonusDef" | "bonusHp", amount: number) {
+    if (save.statPoints <= 0) return;
+    setSave({
+      ...save,
+      statPoints: save.statPoints - 1,
+      [key]: save[key] + amount,
+    });
+  }
+
   const sorted = [...save.inventory].sort((a, b) => itemPower(b) - itemPower(a));
 
   return (
     <div>
       <StatusBar save={save} />
-      <h2 className="mb-3 text-2xl text-foreground">🎒 Sua Build</h2>
+
+      <div className="panel mb-4 p-4">
+        <h2 className="mb-2 text-xl text-foreground">✨ Pontos de Estatística</h2>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-bold text-accent">Disponíveis: {save.statPoints}</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg border border-border/50">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-primary">⚔️ ATAQUE (+2)</span>
+              <span className="text-[10px] text-muted-foreground">Total bônus: {save.bonusAtk}</span>
+            </div>
+            <button
+              disabled={save.statPoints <= 0}
+              onClick={() => addStat("bonusAtk", 2)}
+              className="btn-block btn-block-press bg-primary px-3 py-1 text-xs text-primary-foreground"
+            >
+              MELHORAR
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg border border-border/50">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-accent">🛡️ DEFESA (+1)</span>
+              <span className="text-[10px] text-muted-foreground">Total bônus: {save.bonusDef}</span>
+            </div>
+            <button
+              disabled={save.statPoints <= 0}
+              onClick={() => addStat("bonusDef", 1)}
+              className="btn-block btn-block-press bg-accent px-3 py-1 text-xs text-accent-foreground"
+            >
+              MELHORAR
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg border border-border/50">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-hp">❤️ VIDA (+10)</span>
+              <span className="text-[10px] text-muted-foreground">Total bônus: {save.bonusHp}</span>
+            </div>
+            <button
+              disabled={save.statPoints <= 0}
+              onClick={() => addStat("bonusHp", 10)}
+              className="btn-block btn-block-press bg-hp px-3 py-1 text-xs text-white"
+            >
+              MELHORAR
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="mb-3 text-2xl text-foreground">🎒 Seus Itens</h2>
 
       <div className="mb-4 space-y-2">
         {slots.map((s) => {
@@ -858,20 +972,12 @@ function Gear({
             key={item.uid}
             item={item}
             action={
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => equip(item)}
-                  className="btn-block btn-block-press bg-primary px-2 py-1 text-[10px] text-primary-foreground"
-                >
-                  EQUIPAR
-                </button>
-                <button
-                  onClick={() => sell(item)}
-                  className="btn-block btn-block-press bg-gold px-2 py-1 text-[10px] text-primary-foreground"
-                >
-                  {sellPrice(item)}🪙
-                </button>
-              </div>
+              <button
+                onClick={() => equip(item)}
+                className="btn-block btn-block-press bg-primary px-2 py-1 text-[10px] text-primary-foreground"
+              >
+                EQUIPAR
+              </button>
             }
           />
         ))}
@@ -936,10 +1042,13 @@ function Battle({
       let xp = save.xp + enemy.xp;
       let level = save.level;
       let up = false;
+      let newStatPoints = save.statPoints;
+
       while (xp >= xpToNext(level)) {
         xp -= xpToNext(level);
         level++;
         up = true;
+        newStatPoints += 2;
       }
 
       const isFinal = stage.id === FINAL_STAGE_ID;
@@ -960,6 +1069,7 @@ function Battle({
         ...save,
         xp,
         level,
+        statPoints: newStatPoints,
         gold: save.gold + gold + worldBonus,
         potions: worldBonus ? potions + 5 : potions,
         stage: nextStage,
@@ -1144,7 +1254,9 @@ function Battle({
     <div>
       <div className="panel relative mb-3 overflow-hidden p-4 text-center">
         <p className="text-[11px] font-black uppercase tracking-widest text-accent">{stage.zone}</p>
-        <div className={`my-2 text-6xl ${hitEnemy ? "anim-hit" : "anim-idle"}`}>{enemy.emoji}</div>
+        <div className={`my-2 flex justify-center ${hitEnemy ? "anim-hit" : "anim-idle"}`}>
+          <Sprite sheet={enemy.spriteSheet || "red"} row={enemy.spriteRow} col={enemy.spriteCol} scale={2} />
+        </div>
         {pop && (
           <span
             key={pop.k}
@@ -1176,7 +1288,9 @@ function Battle({
 
       <div className="panel mb-3 p-3">
         <div className="flex items-center gap-2">
-          <span className={`text-3xl ${hitHero ? "anim-hit" : ""}`}>{cls.emoji}</span>
+          <div className={`${hitHero ? "anim-hit" : ""}`}>
+            <Sprite sheet={cls.spriteSheet || "blue"} row={cls.spriteRow} col={cls.spriteCol} scale={1.5} />
+          </div>
           <div className="flex-1">
             <div className="flex justify-between text-[11px] font-black">
               <span className="text-foreground">{save.name}</span>
