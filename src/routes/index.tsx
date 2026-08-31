@@ -87,17 +87,20 @@ function Sprite({
   scale?: number;
   className?: string;
 }) {
-  if (sheet === "dragon") return null;
-
+  const isDragon = sheet === "dragon";
   const isItems = sheet === "items";
+
+  const itemIndex = (row * 8 + col).toString().padStart(2, '0');
   const imageUrl =
-    sheet === "blue"
-      ? "/units_blue.png"
-      : sheet === "red"
-        ? "/units_red.png"
-        : isItems
-          ? "/16x16%20RPG%20Item%20Pack/Sheet.png"
-          : "/images.png";
+    isDragon
+      ? "/Dragao%20Roxo.png"
+      : sheet === "blue"
+        ? "/units_blue.png"
+        : sheet === "red"
+          ? "/units_red.png"
+          : isItems
+            ? `/16x16%20RPG%20Item%20Pack/Item__${itemIndex}.png`
+            : "/images.png";
 
   const baseSize = isItems ? 16 : 32;
   const displayScale = isItems ? scale * 2 : scale;
@@ -110,11 +113,11 @@ function Sprite({
     <div
       className={`inline-block shrink-0 ${className}`}
       style={{
-        width: `${baseSize * displayScale}px`,
-        height: `${baseSize * displayScale}px`,
+        width: `${isDragon ? size * scale : baseSize * displayScale}px`,
+        height: `${isDragon ? size * scale : baseSize * displayScale}px`,
         backgroundImage: `url("${imageUrl}")`,
-        backgroundSize: `${cols * baseSize * displayScale}px ${rows * baseSize * displayScale}px`,
-        backgroundPosition: `-${col * baseSize * displayScale}px -${row * baseSize * displayScale}px`,
+        backgroundSize: (isDragon || isItems) ? "contain" : `${cols * baseSize * displayScale}px ${rows * baseSize * displayScale}px`,
+        backgroundPosition: (isDragon || isItems) ? "center" : `-${col * baseSize * displayScale}px -${row * baseSize * displayScale}px`,
         backgroundRepeat: "no-repeat",
         imageRendering: "pixelated",
       }}
@@ -416,6 +419,9 @@ function Menu({
 }) {
   return (
     <div className="flex min-h-[80vh] flex-col justify-center">
+      <div className="mb-6 text-center anim-idle flex justify-center">
+        <Sprite sheet="dragon" scale={6} size={32} />
+      </div>
       <Title />
       <div className="panel space-y-3 p-4">
         {save ? (
@@ -1255,7 +1261,12 @@ function Battle({
       <div className="panel relative mb-3 overflow-hidden p-4 text-center">
         <p className="text-[11px] font-black uppercase tracking-widest text-accent">{stage.zone}</p>
         <div className={`my-2 flex justify-center ${hitEnemy ? "anim-hit" : "anim-idle"}`}>
-          <Sprite sheet={enemy.spriteSheet || "red"} row={enemy.spriteRow} col={enemy.spriteCol} scale={2} />
+          <Sprite
+            sheet={enemy.spriteSheet || "red"}
+            row={enemy.spriteRow}
+            col={enemy.spriteCol}
+            scale={enemy.spriteSheet === "dragon" ? 4 : 2}
+          />
         </div>
         {pop && (
           <span

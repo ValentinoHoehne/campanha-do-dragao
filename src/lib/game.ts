@@ -316,8 +316,8 @@ export const STAGES: Stage[] = [
         gold: 1500,
         boss: true,
         spriteRow: 0,
-        spriteCol: 5,
-        spriteSheet: "red",
+        spriteCol: 0,
+        spriteSheet: "dragon",
       },
     ],
     postBossMessage: "A energia corrompida foi liberada. O Arquiteto se revela.",
@@ -466,42 +466,78 @@ export function rarityDef(r: Rarity) {
   return RARITIES.find((x) => x.id === r) ?? RARITIES[0]!;
 }
 
+const WEAPON_SUBTYPES = [
+  { name: "Espada de Ferro", emoji: "⚔️", index: 0, tier: 1 },
+  { name: "Espada do Guardião", emoji: "🛡️", index: 0, tier: 2 },
+  { name: "Lâmina Rubra", emoji: "⚔️", index: 9, tier: 3 },
+  { name: "Lâmina Carmesim", emoji: "⚔️", index: 9, tier: 4 },
+  { name: "Espada do Cavaleiro", emoji: "⚔️", index: 5, tier: 5 },
+  { name: "Espada Real", emoji: "👑", index: 5, tier: 6 },
+  { name: "Lâmina Sombria", emoji: "🗡️", index: 8, tier: 7 },
+  { name: "Lâmina do Abismo", emoji: "🌌", index: 8, tier: 8 },
+  { name: "Espada de Cristal", emoji: "💎", index: 11, tier: 9 },
+  { name: "Espada Prismática", emoji: "🌈", index: 11, tier: 10 },
+  { name: "Espada Flamejante", emoji: "🔥", index: 15, tier: 11 },
+  { name: "Espada Infernal", emoji: "🌋", index: 15, tier: 12 },
+];
+
+const ARMOR_SUBTYPES = [
+  { name: "Armadura de Ferro", emoji: "🛡️", index: 32, tier: 1 },
+  { name: "Armadura do Guardião", emoji: "🛡️", index: 32, tier: 2 },
+  { name: "Armadura Rubra", emoji: "🥋", index: 33, tier: 3 },
+  { name: "Armadura Carmesim", emoji: "🥋", index: 33, tier: 4 },
+  { name: "Armadura do Cavaleiro", emoji: "🛡️", index: 34, tier: 5 },
+  { name: "Armadura Real", emoji: "👑", index: 34, tier: 6 },
+  { name: "Armadura Sombria", emoji: "🌑", index: 35, tier: 7 },
+  { name: "Armadura do Abismo", emoji: "🌌", index: 35, tier: 8 },
+  { name: "Armadura de Cristal", emoji: "💎", index: 36, tier: 9 },
+  { name: "Armadura Prismática", emoji: "🌈", index: 36, tier: 10 },
+  { name: "Armadura Flamejante", emoji: "🔥", index: 37, tier: 11 },
+  { name: "Armadura Infernal", emoji: "🌋", index: 37, tier: 12 },
+];
+
+const ACCESSORY_SUBTYPES = [
+  { name: "Botas de Couro", emoji: "👢", index: 48, tier: 1 },
+  { name: "Botas do Viajante", emoji: "🥾", index: 48, tier: 2 },
+  { name: "Botas de Ferro", emoji: "👞", index: 49, tier: 3 },
+  { name: "Botas do Guerreiro", emoji: "👞", index: 49, tier: 4 },
+  { name: "Botas da Floresta", emoji: "👟", index: 50, tier: 5 },
+  { name: "Botas do Caçador", emoji: "👟", index: 50, tier: 6 },
+  { name: "Botas Sombrias", emoji: "🌑", index: 51, tier: 7 },
+  { name: "Botas do Crepúsculo", emoji: "🌌", index: 51, tier: 8 },
+  { name: "Botas de Cristal", emoji: "💎", index: 52, tier: 9 },
+  { name: "Botas Prismáticas", emoji: "🌈", index: 52, tier: 10 },
+  { name: "Botas Flamejantes", emoji: "🔥", index: 53, tier: 11 },
+  { name: "Botas Infernais", emoji: "🌋", index: 53, tier: 12 },
+];
+
 const SLOT_BASES: Record<
   Slot,
-  { names: string[]; emojis: string[]; atk: number; def: number; satk: number; sdef: number; hp: number; crit: number; spriteCol: number }
+  { atk: number; def: number; satk: number; sdef: number; hp: number; crit: number }
 > = {
   arma: {
-    names: ["Lâmina", "Machado", "Cajado", "Adaga", "Martelo", "Arco"],
-    emojis: ["⚔️", "🪓", "🔱", "🗡️", "🔨", "🏹"],
     atk: 5,
     def: 0,
     satk: 4,
     sdef: 0,
     hp: 0,
     crit: 3,
-    spriteCol: 0,
   },
   armadura: {
-    names: ["Peitoral", "Manto", "Cota", "Couraça"],
-    emojis: ["🛡️", "🧥", "🥋", "🦺"],
     atk: 0,
     def: 4,
     satk: 0,
     sdef: 3,
     hp: 14,
     crit: 0,
-    spriteCol: 1,
   },
   acessorio: {
-    names: ["Botas", "Botinas", "Grevilhas", "Sandálias"],
-    emojis: ["👢", "👞", "👟", "🥾"],
     atk: 2,
     def: 1,
     satk: 2,
     sdef: 1,
     hp: 8,
     crit: 4,
-    spriteCol: 2,
   },
 };
 
@@ -529,18 +565,37 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
   if (Math.random() > chance) return null;
   const slot = pick<Slot>(["arma", "armadura", "acessorio"]);
   const base = SLOT_BASES[slot];
+
+  const allSubtypes =
+    slot === "arma" ? WEAPON_SUBTYPES :
+    slot === "armadura" ? ARMOR_SUBTYPES :
+    ACCESSORY_SUBTYPES;
+
+  // Filter subtypes appropriate for the stage (Progression)
+  // Max tier is 12, max stage is 12. Let's allow items up to stageId + 1.
+  const availableSubtypes = allSubtypes.filter(s => s.tier <= stageId + 1);
+  const subtype = pick(availableSubtypes.length > 0 ? availableSubtypes : [allSubtypes[0]!]);
+
   const rarity = boss
     ? rollRarity(diff.rarityBonus + 0.25)
     : rollRarity(diff.rarityBonus);
   const rd = rarityDef(rarity);
-  const tier = 1 + (stageId - 1) * 0.55;
-  const scale = tier * rd.mult;
+
+  // Stats scaled by stage AND subtype tier
+  const tierScale = 1 + (subtype.tier - 1) * 0.15;
+  const stageScale = 1 + (stageId - 1) * 0.45;
+  const scale = stageScale * tierScale * rd.mult;
+
   const jitter = () => 0.85 + Math.random() * 0.3;
   const focus: DamageType = Math.random() < 0.5 ? "fisico" : "especial";
+
+  const row = Math.floor(subtype.index / 8);
+  const col = subtype.index % 8;
+
   return {
     uid: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: `${pick(base.names)} ${pick(SUFFIXES[rarity])}`,
-    emoji: pick(base.emojis),
+    name: subtype.name,
+    emoji: subtype.emoji,
     slot,
     rarity,
     atk: Math.round(base.atk * scale * jitter() * (focus === "fisico" ? 1.25 : 0.45)),
@@ -549,8 +604,8 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
     sdef: Math.round(base.sdef * scale * jitter() * (focus === "especial" ? 1.2 : 0.6)),
     hp: Math.round(base.hp * scale * jitter()),
     crit: Math.round(base.crit * rd.mult * jitter()),
-    spriteRow: 0,
-    spriteCol: base.spriteCol,
+    spriteRow: row,
+    spriteCol: col,
   };
 }
 
@@ -558,40 +613,40 @@ export function rollDrop(stageId: number, diff: DifficultyDef, boss = false): It
 
 const ABYSS_BOSS_ITEMS: Omit<Item, "uid">[] = [
   {
-    name: "Lâmina de Nyxaroth",
-    emoji: "🌠",
+    name: "Espada Infernal",
+    emoji: "🌋",
     slot: "arma",
     rarity: "lendario",
-    atk: 62,
+    atk: 120,
     def: 0,
-    hp: 0,
-    crit: 22,
-    spriteRow: 0,
-    spriteCol: 0,
+    hp: 50,
+    crit: 25,
+    spriteRow: 1, // index 15
+    spriteCol: 7,
   },
   {
-    name: "Couraça do Vazio",
-    emoji: "🌑",
+    name: "Armadura Infernal",
+    emoji: "🌋",
     slot: "armadura",
     rarity: "lendario",
     atk: 0,
-    def: 48,
-    hp: 180,
+    def: 95,
+    hp: 450,
     crit: 0,
-    spriteRow: 0,
-    spriteCol: 1,
+    spriteRow: 4, // index 37
+    spriteCol: 5,
   },
   {
-    name: "Pegadas do Abismo",
-    emoji: "👣",
+    name: "Botas Infernais",
+    emoji: "🌋",
     slot: "acessorio",
     rarity: "lendario",
-    atk: 24,
-    def: 14,
-    hp: 90,
-    crit: 30,
-    spriteRow: 0,
-    spriteCol: 2,
+    atk: 45,
+    def: 30,
+    hp: 200,
+    crit: 35,
+    spriteRow: 6, // index 53
+    spriteCol: 5,
   },
 ];
 
@@ -606,7 +661,7 @@ export function rollBossExclusive(stageId: number): Item | null {
     def: Math.round(base.def * jitter()),
     hp: Math.round(base.hp * jitter()),
     crit: Math.round(base.crit * jitter()),
-    spriteRow: 0,
+    spriteRow: base.spriteRow,
     spriteCol: base.spriteCol,
   };
 }
